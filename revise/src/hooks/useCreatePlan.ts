@@ -1,6 +1,105 @@
 import { useMemo, useReducer, useCallback } from 'react';
 import { daysBetween, clampDateToToday } from '../lib/dateUtils';
 import { generateStudyPlan, type PlanResponse } from '../lib/api';
+import type { StudyPlan, StudyDay, Flashcard, QuizQuestion, UploadedFile } from '../types';
+
+/**
+ * Transform PlanResponse and wizard state into StudyPlan database entity
+ */
+function transformToStudyPlan(
+  plan: PlanResponse,
+  testDate: Date,
+  createdDate: Date,
+  daysAvailable: number,
+  minutesPerDay: number
+): StudyPlan {
+  return {
+    id: crypto.randomUUID(),
+    subject: `${plan.topics[0].name} Study Plan`,
+    testDate,
+    createdDate,
+    totalDays: daysAvailable,
+    suggestedMinutesPerDay: minutesPerDay,
+    topics: plan.topics.map(t => ({
+      id: t.id,
+      name: t.name,
+      importance: t.importance,
+      keyPoints: t.keyPoints,
+    })),
+  };
+}
+
+/**
+ * Transform schedule array into StudyDay database entities
+ */
+function transformToStudyDays(
+  schedule: PlanResponse['schedule'],
+  planId: string,
+  createdDate: Date
+): StudyDay[] {
+  return schedule.map(day => ({
+    id: crypto.randomUUID(),
+    planId,
+    dayNumber: day.dayNumber,
+    date: new Date(createdDate.getTime() + (day.dayNumber - 1) * 86400000),
+    completed: false,
+    newTopicIds: day.newTopicIds,
+    reviewTopicIds: day.reviewTopicIds,
+    flashcardIds: [],
+    quizIds: [],
+    estimatedMinutes: day.estimatedMinutes,
+  }));
+}
+
+/**
+ * Transform flashcards array into Flashcard database entities
+ */
+function transformToFlashcards(flashcards: PlanResponse['flashcards']): Flashcard[] {
+  return flashcards.map(card => ({
+    id: crypto.randomUUID(),
+    topicId: card.topicId,
+    front: card.front,
+    back: card.back,
+    firstShownDate: undefined,
+    reviewDates: [],
+    masteryLevel: 0,
+    needsPractice: false,
+  }));
+}
+
+/**
+ * Transform quiz questions array into QuizQuestion database entities
+ */
+function transformToQuizQuestions(quizQuestions: PlanResponse['quizQuestions']): QuizQuestion[] {
+  return quizQuestions.map(q => ({
+    id: crypto.randomUUID(),
+    topicId: q.topicId,
+    question: q.question,
+    options: q.options,
+    correctAnswerIndex: q.correctIndex,  // Field name mapping
+    explanation: q.explanation,
+  }));
+}
+
+/**
+ * Transform uploaded files into UploadedFile database entities
+ */
+function transformToUploadedFiles(
+  files: File[],
+  planId: string,
+  extractedText: string
+): UploadedFile[] {
+  return files.map(file => ({
+    id: crypto.randomUUID(),
+    planId,
+    fileName: file.name,
+    fileType: file.type,
+    fileSize: file.size,
+    uploadedAt: new Date(),
+    extractedText,
+    fileBlob: file,
+  }));
+}
 
 export interface WizardState {
   step: number;
@@ -229,3 +328,11 @@ export function useCreatePlan() {
     isSaving: state.isSaving,
   };
 }
+
+export {
+  transformToStudyPlan,
+  transformToStudyDays,
+  transformToFlashcards,
+  transformToQuizQuestions,
+  transformToUploadedFiles,
+};
