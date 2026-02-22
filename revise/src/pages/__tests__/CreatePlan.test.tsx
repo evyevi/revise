@@ -76,6 +76,29 @@ describe('CreatePlan wizard', () => {
     expect(screen.getByRole('button', { name: /generate plan/i })).toBeInTheDocument();
   });
 
+  it('renders step 3 with Continue to Review button when plan exists', () => {
+    const mockPlan = {
+      topics: [{ id: '1', name: 'Math', importance: 'high' as const, keyPoints: [], estimatedMinutes: 60 }],
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    };
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 3,
+      plan: mockPlan,
+      testDate: new Date('2026-02-24'),
+      daysAvailable: 2,
+      isGenerating: false,
+      canProceed: true,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    expect(screen.getByRole('button', { name: /continue to review/i })).toBeInTheDocument();
+  });
+
   it('renders step 4 (review) with plan details and minutes input', () => {
     const mockPlan = {
       topics: [{ id: '1', name: 'Math', importance: 'high' as const, keyPoints: [], estimatedMinutes: 60 }],
