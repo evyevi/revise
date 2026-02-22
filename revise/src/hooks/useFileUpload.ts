@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { extractTextFromFile } from '../lib/textExtraction';
 
 export interface UploadedFileInfo {
   id: string;
@@ -6,62 +7,54 @@ export interface UploadedFileInfo {
   status: 'pending' | 'processing' | 'completed' | 'error';
   extractedText?: string;
   error?: string;
+  progress?: number;
 }
 
 export interface UseFileUploadReturn {
   files: UploadedFileInfo[];
-  addFiles: (newFiles: File[]) => UploadedFileInfo[];
+  addFiles: (newFiles: File[]) => Promise<UploadedFileInfo[]>;
   removeFile: (id: string) => void;
-  updateFileStatus: (
-    id: string,
-    status: UploadedFileInfo['status'],
-    data?: Partial<UploadedFileInfo>
-  ) => void;
   clearFiles: () => void;
-}
-
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const ALLOWED_TYPES = ['.pdf', '.txt', '.jpg', '.jpeg', '.png', '.pptx'];
-
-function validateFile(file: File): { valid: boolean; error?: string } {
-  // Check file size
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: `File too large (${(file.size / (1024 * 1024)).toFixed(1)}MB > 50MB)`,
-    };
-  }
-
-  // Check file extension
-  const fileName = file.name.toLowerCase();
-  const hasValidExtension = ALLOWED_TYPES.some((ext) => fileName.endsWith(ext));
-  if (!hasValidExtension) {
-    return {
-      valid: false,
-      error: `File type not supported. Allowed: ${ALLOWED_TYPES.join(', ')}`,
-    };
-  }
-
-  return { valid: true };
+  getAllExtractedText: () => string;
 }
 
 export function useFileUpload(): UseFileUploadReturn {
   const [files, setFiles] = useState<UploadedFileInfo[]>([]);
 
-  const addFiles = (newFiles: File[]): UploadedFileInfo[] => {
-    const fileInfos: UploadedFileInfo[] = newFiles.map((file) => {
-      const validation = validateFile(file);
-
-      return {
-        id: `${file.name}-${Date.now()}-${Math.random()}`,
-        file,
-        status: validation.valid ? 'pending' : 'error',
-        error: validation.error,
-      };
-    });
-
+  const addFiles = async (newFiles: File[]): Promise<UploadedFileInfo[]> => {
+    const fileInfos: UploadedFileInfo[] = newFiles.map((file) => ({
+      id: `${file.name}-${Date.now()}-${Math.random()}`,
+      file,
+      status: 'pending',
+    }));
+    
     setFiles((prev) => [...prev, ...fileInfos]);
+    
+    // Process each file sequentially
+    for (const fileInfo of fileInfos) {
+      await processFile(fileInfo.id);
+    }
+    
     return fileInfos;
+  };
+
+  const processFile = async (id: string): Promise<void> => {
+    updateFileStatus(id, 'processing');
+    
+    const fileInfo = files.find((f) => f.id === id);
+    if (!fileInfo) return;
+
+    try {
+      const text = await extractTextFromFile(fileInfo.file, (progress) => {
+        updateFileProgress(id, progress);
+      });
+      
+      updateFileStatus(id, 'completed', { extractedText: text });
+    } catch (error) {
+      updateFileStatus(id, 'error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   };
 
   const removeFile = (id: string): void => {
@@ -78,15 +71,31 @@ export function useFileUpload(): UseFileUploadReturn {
     );
   };
 
+  const updateFileProgress = (id: string, progress: number): void => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, progress } : f))
+    );
+  };
+
   const clearFiles = (): void => {
     setFiles([]);
+  };
+
+  /**
+   * Get all successfully extracted text joined with separator
+   */
+  const getAllExtractedText = (): string => {
+    return files
+      .filter((f) => f.status === 'completed' && f.extractedText)
+      .map((f) => f.extractedText!)
+      .join('\n\n---\n\n');
   };
 
   return {
     files,
     addFiles,
     removeFile,
-    updateFileStatus,
     clearFiles,
+    getAllExtractedText,
   };
 }

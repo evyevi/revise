@@ -7,9 +7,12 @@ import { useFileUpload } from '../hooks/useFileUpload';
 export function CreatePlan() {
   const { files, addFiles, removeFile } = useFileUpload();
 
-  const handleFilesSelected = useCallback((newFiles: File[]) => {
-    addFiles(newFiles);
+  const handleFilesSelected = useCallback(async (newFiles: File[]) => {
+    await addFiles(newFiles);
   }, [addFiles]);
+
+  const completedFilesCount = files.filter((f) => f.status === 'completed').length;
+  const hasError = files.some((f) => f.status === 'error');
 
   return (
     <Layout showBottomNav={false}>
@@ -21,19 +24,33 @@ export function CreatePlan() {
         
         {files.length > 0 && (
           <div className="mt-6 space-y-3">
-            <h2 className="font-semibold text-gray-700">
-              Uploaded Files ({files.length})
-            </h2>
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-semibold text-gray-700">
+                Uploaded Files ({completedFilesCount}/{files.length})
+              </h2>
+              {hasError && (
+                <p className="text-xs text-red-600">Some files failed</p>
+              )}
+            </div>
             {files.map((fileInfo) => (
               <FilePreview
                 key={fileInfo.id}
                 fileName={fileInfo.file.name}
                 fileSize={fileInfo.file.size}
                 status={fileInfo.status}
+                progress={fileInfo.progress}
                 error={fileInfo.error}
                 onRemove={() => removeFile(fileInfo.id)}
               />
             ))}
+            
+            {completedFilesCount > 0 && (
+              <button
+                className="w-full mt-6 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-transform hover:bg-primary-600"
+              >
+                Continue to Study Plan
+              </button>
+            )}
           </div>
         )}
       </div>
