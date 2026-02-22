@@ -103,4 +103,9 @@ describe('useCreatePlan', () => {
       expect.any(Function)
     );
   });
+
+  it('isSaving state starts as false', () => {
+    const { result } = renderHook(() => useCreatePlan());
+    expect(result.current.isSaving).toBe(false);
+  });
 });
