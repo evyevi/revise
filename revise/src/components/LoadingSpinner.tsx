@@ -58,8 +58,6 @@ export function LoadingSpinner({
     return (
       <div
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        role="status"
-        aria-label={message || 'Loading'}
       >
         <div className="bg-white rounded-xl p-8 shadow-lg">
           {spinner}

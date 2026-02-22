@@ -19,22 +19,17 @@ export function DatePicker({
   disabled = false,
   error,
 }: DatePickerProps) {
+  const formatDate = (date: Date | null): string => {
+    if (!date) return '';
+    return date.toISOString().split('T')[0];
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateString = e.target.value;
     if (dateString) {
       const date = new Date(dateString + 'T00:00:00Z');
       onChange(date);
     }
-  };
-
-  const formatDateForInput = (date: Date | null): string => {
-    if (!date) return '';
-    return date.toISOString().split('T')[0];
-  };
-
-  const formatDateForConstraint = (date: Date | null): string => {
-    if (!date) return '';
-    return date.toISOString().split('T')[0];
   };
 
   return (
@@ -46,11 +41,11 @@ export function DatePicker({
       )}
       <input
         type="date"
-        value={formatDateForInput(value)}
+        value={formatDate(value)}
         onChange={handleChange}
         disabled={disabled}
-        min={formatDateForConstraint(minDate)}
-        max={formatDateForConstraint(maxDate)}
+        min={formatDate(minDate)}
+        max={formatDate(maxDate)}
         aria-label={label}
         aria-invalid={!!error}
         aria-describedby={error ? 'date-error' : undefined}
