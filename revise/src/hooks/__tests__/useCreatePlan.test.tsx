@@ -11,9 +11,21 @@ import {
 } from '../useCreatePlan';
 import { generateStudyPlan } from '../../lib/api';
 import type { PlanResponse } from '../../lib/api';
+import { db } from '../../lib/db';
 
 vi.mock('../../lib/api', () => ({
   generateStudyPlan: vi.fn(),
+}));
+
+vi.mock('../../lib/db', () => ({
+  db: {
+    transaction: vi.fn(),
+    studyPlans: { add: vi.fn() },
+    studyDays: { bulkAdd: vi.fn() },
+    flashcards: { bulkAdd: vi.fn() },
+    quizQuestions: { bulkAdd: vi.fn() },
+    uploadedFiles: { bulkAdd: vi.fn() },
+  },
 }));
 
 beforeEach(() => {
@@ -269,5 +281,120 @@ describe('useCreatePlan', () => {
     expect(result[0].uploadedAt).toBeInstanceOf(Date);
     expect(result[0].fileBlob).toBe(mockFiles[0]);
     expect(result[0].fileSize).toBeGreaterThan(0);
+  });
+
+  test('savePlan throws error if testDate is null', async () => {
+    const { result } = renderHook(() => useCreatePlan());
+    
+    // Setup: set plan and text
+    act(() => {
+      result.current.setExtractedText('Some content');
+      result.current.setTestDate(new Date('2026-03-01'));
+    });
+    
+    // Generate a plan
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [{ id: 't1', name: 'Test', importance: 'high', keyPoints: [], estimatedMinutes: 30 }],
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    });
+    
+    await act(async () => {
+      await result.current.generatePlan();
+    });
+    
+    // Now clear the testDate
+    act(() => {
+      result.current.setTestDate(null);
+    });
+    
+    // savePlan should throw because testDate is null
+    await expect(result.current.savePlan([])).rejects.toThrow('Test date is required');
+  });
+
+  test('savePlan successfully saves all entities to database', async () => {
+    // Setup mocks
+    const mockTransaction = vi.fn().mockImplementation(async (mode, tables, callback) => {
+      await callback();
+    });
+    (db.transaction as any) = mockTransaction;
+    (db.studyPlans.add as any).mockResolvedValue('plan-id');
+    (db.studyDays.bulkAdd as any).mockResolvedValue(undefined);
+    (db.flashcards.bulkAdd as any).mockResolvedValue(undefined);
+    (db.quizQuestions.bulkAdd as any).mockResolvedValue(undefined);
+    (db.uploadedFiles.bulkAdd as any).mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useCreatePlan());
+    
+    // Setup wizard state
+    act(() => {
+      result.current.setExtractedText('Content');
+      result.current.setTestDate(new Date('2026-03-01'));
+      result.current.setMinutesPerDay(45);
+    });
+    
+    // Mock plan in state by generating one
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [{ id: 't1', name: 'Biology', importance: 'high', keyPoints: [], estimatedMinutes: 30 }],
+      schedule: [{ dayNumber: 1, newTopicIds: ['t1'], reviewTopicIds: [], estimatedMinutes: 30 }],
+      flashcards: [{ topicId: 't1', front: 'Q', back: 'A' }],
+      quizQuestions: [{ topicId: 't1', question: 'Q?', options: ['A'], correctIndex: 0, explanation: 'E' }],
+      recommendedMinutesPerDay: 45,
+    });
+    
+    await act(async () => {
+      await result.current.generatePlan();
+    });
+    
+    const mockFiles = [new File(['content'], 'test.pdf', { type: 'application/pdf' })];
+    
+    let planId: string = '';
+    await act(async () => {
+      planId = await result.current.savePlan(mockFiles);
+    });
+    
+    expect(planId).toBeTruthy();
+    expect(mockTransaction).toHaveBeenCalled();
+    expect(db.studyPlans.add).toHaveBeenCalled();
+    expect(db.studyDays.bulkAdd).toHaveBeenCalled();
+    expect(db.flashcards.bulkAdd).toHaveBeenCalled();
+    expect(db.quizQuestions.bulkAdd).toHaveBeenCalled();
+    expect(db.uploadedFiles.bulkAdd).toHaveBeenCalled();
+  });
+
+  test('savePlan sets error state when database save fails', async () => {
+    // Setup mock to fail
+    const mockTransaction = vi.fn().mockRejectedValue(new Error('Database error'));
+    (db.transaction as any) = mockTransaction;
+
+    const { result } = renderHook(() => useCreatePlan());
+    
+    // Setup wizard state
+    act(() => {
+      result.current.setExtractedText('Content');
+      result.current.setTestDate(new Date('2026-03-01'));
+    });
+    
+    // Generate plan
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [{ id: 't1', name: 'Test', importance: 'high', keyPoints: [], estimatedMinutes: 30 }],
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    });
+    
+    await act(async () => {
+      await result.current.generatePlan();
+    });
+    
+    await act(async () => {
+      await expect(result.current.savePlan([])).rejects.toThrow('Database error');
+    });
+    
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.isSaving).toBe(false);
   });
 });

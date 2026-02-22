@@ -1,6 +1,7 @@
 import { useMemo, useReducer, useCallback } from 'react';
 import { daysBetween, clampDateToToday } from '../lib/dateUtils';
 import { generateStudyPlan, type PlanResponse } from '../lib/api';
+import { db } from '../lib/db';
 import type { StudyPlan, StudyDay, Flashcard, QuizQuestion, UploadedFile } from '../types';
 
 /**
@@ -312,6 +313,66 @@ export function useCreatePlan() {
     }
   }, [state.extractedText, state.isGenerating, state.minutesPerDay, daysAvailable]);
 
+  const savePlan = useCallback(
+    async (files: File[]): Promise<string> => {
+      // Validation
+      if (!state.testDate) {
+        throw new Error('Test date is required to save plan');
+      }
+      if (!state.plan) {
+        throw new Error('Plan must be generated before saving');
+      }
+      if (!state.extractedText) {
+        throw new Error('Extracted text is required to save plan');
+      }
+
+      dispatch({ type: 'SET_SAVING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
+
+      try {
+        const createdDate = new Date();
+        const minutesPerDay = state.minutesPerDay || state.recommendedMinutesPerDay || 30;
+
+        // Transform data
+        const studyPlan = transformToStudyPlan(
+          state.plan,
+          state.testDate,
+          createdDate,
+          daysAvailable,
+          minutesPerDay
+        );
+        const studyDays = transformToStudyDays(state.plan.schedule, studyPlan.id, createdDate);
+        const flashcards = transformToFlashcards(state.plan.flashcards);
+        const quizQuestions = transformToQuizQuestions(state.plan.quizQuestions);
+        const uploadedFiles = transformToUploadedFiles(files, studyPlan.id, state.extractedText);
+
+        // Save to database in transaction
+        await db.transaction('rw', [
+          db.studyPlans,
+          db.studyDays,
+          db.flashcards,
+          db.quizQuestions,
+          db.uploadedFiles,
+        ], async () => {
+          await db.studyPlans.add(studyPlan);
+          await db.studyDays.bulkAdd(studyDays);
+          await db.flashcards.bulkAdd(flashcards);
+          await db.quizQuestions.bulkAdd(quizQuestions);
+          await db.uploadedFiles.bulkAdd(uploadedFiles);
+        });
+
+        dispatch({ type: 'SET_SAVING', payload: false });
+        return studyPlan.id;
+      } catch (error) {
+        dispatch({ type: 'SET_SAVING', payload: false });
+        const message = error instanceof Error ? error.message : 'Failed to save study plan';
+        dispatch({ type: 'SET_ERROR', payload: message });
+        throw error;
+      }
+    },
+    [state, daysAvailable]
+  );
+
   return {
     ...state,
     daysAvailable,
@@ -325,6 +386,7 @@ export function useCreatePlan() {
     prevStep,
     goToStep,
     generatePlan,
+    savePlan,
     reset,
     clearError,
     isSaving: state.isSaving,
