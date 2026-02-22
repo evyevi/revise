@@ -127,22 +127,33 @@ export function CreatePlan() {
               </div>
             )}
 
-            <button
-              type="button"
-              disabled={isGenerating}
-              onClick={async () => {
-                await generatePlan();
-                // On success, hook will auto-advance if we add that logic
-              }}
-              className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
-            >
-              {isGenerating ? 'Generating...' : 'Generate Plan'}
-            </button>
+            {!plan && (
+              <>
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={generatePlan}
+                  className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Plan'}
+                </button>
 
-            {isGenerating && (
-              <div className="mt-4 flex justify-center">
-                <LoadingSpinner size="md" />
-              </div>
+                {isGenerating && (
+                  <div className="mt-4 flex justify-center">
+                    <LoadingSpinner size="md" />
+                  </div>
+                )}
+              </>
+            )}
+
+            {plan && !isGenerating && (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600"
+              >
+                Continue to Review
+              </button>
             )}
           </>
         )}
