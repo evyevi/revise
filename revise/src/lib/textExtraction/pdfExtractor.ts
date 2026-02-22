@@ -1,7 +1,7 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 
-// Configure worker from CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure legacy worker from CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/legacy/build/pdf.worker.min.js`;
 
 const PAGE_SEPARATOR = '\n\n'; // Double newline separates pages for readability
 
