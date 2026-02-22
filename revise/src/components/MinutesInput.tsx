@@ -60,7 +60,7 @@ export function MinutesInput({
             {label}
           </label>
         )}
-        {showRecommendation && recommendedValue && (
+        {showRecommendation && recommendedValue !== undefined && (
           <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
             Recommended: {recommendedValue}
           </span>
