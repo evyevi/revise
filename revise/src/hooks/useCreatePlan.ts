@@ -1,6 +1,6 @@
 import { useMemo, useReducer, useCallback } from 'react';
 import { daysBetween, clampDateToToday } from '../lib/dateUtils';
-import type { PlanResponse } from '../lib/api';
+import { generateStudyPlan, type PlanResponse } from '../lib/api';
 
 export interface WizardState {
   step: number;
@@ -141,6 +141,40 @@ export function useCreatePlan() {
     dispatch({ type: 'SET_ERROR', payload: null });
   }, []);
 
+  const generatePlan = useCallback(async (): Promise<void> => {
+    if (state.isGenerating) return;
+    if (!state.extractedText || daysAvailable <= 0) {
+      dispatch({ type: 'SET_ERROR', payload: 'Missing required data to generate plan.' });
+      return;
+    }
+
+    dispatch({ type: 'SET_GENERATING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+
+    try {
+      const request: { content: string; daysAvailable: number; minutesPerDay?: number } = {
+        content: state.extractedText,
+        daysAvailable,
+      };
+
+      if (state.minutesPerDay !== null) {
+        request.minutesPerDay = state.minutesPerDay;
+      }
+
+      const plan = await generateStudyPlan(request);
+
+      dispatch({ type: 'SET_PLAN', payload: plan });
+      dispatch({ type: 'SET_RECOMMENDED_MINUTES', payload: plan.recommendedMinutesPerDay });
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to generate plan',
+      });
+    } finally {
+      dispatch({ type: 'SET_GENERATING', payload: false });
+    }
+  }, [state.extractedText, state.isGenerating, state.minutesPerDay, daysAvailable]);
+
   return {
     ...state,
     daysAvailable,
@@ -153,6 +187,7 @@ export function useCreatePlan() {
     nextStep,
     prevStep,
     goToStep,
+    generatePlan,
     reset,
     clearError,
   };

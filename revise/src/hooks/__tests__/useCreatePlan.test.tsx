@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCreatePlan, getInitialWizardState } from '../useCreatePlan';
+import { generateStudyPlan } from '../../lib/api';
 
 vi.mock('../../lib/api', () => ({
   generateStudyPlan: vi.fn(),
@@ -47,5 +48,32 @@ describe('useCreatePlan', () => {
     });
 
     expect(result.current.step).toBe(2);
+  });
+
+  it('calls generateStudyPlan without minutes on first generate', async () => {
+    const { result } = renderHook(() => useCreatePlan());
+
+    act(() => {
+      result.current.setExtractedText('content');
+      result.current.setTestDate(new Date('2026-02-24T00:00:00Z'));
+    });
+
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [],
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    });
+
+    await act(async () => {
+      await result.current.generatePlan();
+    });
+
+    expect(generateStudyPlan).toHaveBeenCalledWith(
+      { content: 'content', daysAvailable: 2 },
+      expect.any(Function)
+    );
+    expect(result.current.recommendedMinutesPerDay).toBe(30);
   });
 });
