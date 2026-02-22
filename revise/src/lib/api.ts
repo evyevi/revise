@@ -48,34 +48,36 @@ export async function generateStudyPlan(
   request: GeneratePlanRequest,
   onRetry?: (attempt: number) => void
 ): Promise<PlanResponse> {
-  const endpoint = process.env.REACT_APP_API_ENDPOINT || '/api/generate-plan';
+  const endpoint = import.meta.env.VITE_API_ENDPOINT || '/api/generate-plan';
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-        signal: controller.signal,
-      });
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        try {
-          const error = await response.json();
-          throw new Error(error.details || error.error || 'Failed to generate study plan');
-        } catch {
-          throw new Error(`HTTP ${response.status}: Failed to generate study plan`);
+        if (!response.ok) {
+          try {
+            const error = await response.json();
+            throw new Error(error.details || error.error || 'Failed to generate study plan');
+          } catch {
+            throw new Error(`HTTP ${response.status}: Failed to generate study plan`);
+          }
         }
-      }
 
-      return response.json();
+        return response.json();
+      } finally {
+        clearTimeout(timeoutId);
+      }
     } catch (error) {
       const isLastAttempt = attempt === MAX_RETRIES;
       const isTimeoutError = error instanceof Error && error.name === 'AbortError';

@@ -6,7 +6,7 @@ import { useFileUpload } from '../hooks/useFileUpload';
 import { generateStudyPlan } from '../lib/api';
 
 export function CreatePlan() {
-  const { files, addFiles, removeFile } = useFileUpload();
+  const { files, addFiles, removeFile, getAllExtractedText } = useFileUpload();
 
   const handleFilesSelected = useCallback(async (newFiles: File[]) => {
     await addFiles(newFiles);
@@ -15,13 +15,6 @@ export function CreatePlan() {
   const completedFilesCount = files.filter((f) => f.status === 'completed').length;
   const hasError = files.some((f) => f.status === 'error');
   const isProcessing = files.some((f) => f.status === 'pending' || f.status === 'processing');
-
-  const getAllExtractedText = () => {
-    return files
-      .filter((f) => f.status === 'completed' && f.extractedText)
-      .map((f) => f.extractedText)
-      .join('\n\n');
-  };
 
   return (
     <Layout showBottomNav={false}>
