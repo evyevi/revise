@@ -13,6 +13,7 @@ export function CreatePlan() {
 
   const completedFilesCount = files.filter((f) => f.status === 'completed').length;
   const hasError = files.some((f) => f.status === 'error');
+  const isProcessing = files.some((f) => f.status === 'pending' || f.status === 'processing');
 
   return (
     <Layout showBottomNav={false}>
@@ -46,9 +47,11 @@ export function CreatePlan() {
             
             {completedFilesCount > 0 && (
               <button
-                className="w-full mt-6 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-transform hover:bg-primary-600"
+                type="button"
+                disabled={isProcessing}
+                className="w-full mt-6 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
               >
-                Continue to Study Plan
+                {isProcessing ? 'Processing...' : 'Continue to Study Plan'}
               </button>
             )}
           </div>

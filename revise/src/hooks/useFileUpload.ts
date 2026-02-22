@@ -18,34 +18,49 @@ export interface UseFileUploadReturn {
   getAllExtractedText: () => string;
 }
 
+/**
+ * Generate a unique ID for file tracking
+ * Uses crypto.randomUUID() for guaranteed uniqueness
+ */
+function generateFileId(): string {
+  return crypto.randomUUID();
+}
+
 export function useFileUpload(): UseFileUploadReturn {
   const [files, setFiles] = useState<UploadedFileInfo[]>([]);
 
+  /**
+   * Add and process multiple files in parallel
+   * Each file is processed independently to extract text
+   */
   const addFiles = async (newFiles: File[]): Promise<UploadedFileInfo[]> => {
     const fileInfos: UploadedFileInfo[] = newFiles.map((file) => ({
-      id: `${file.name}-${Date.now()}-${Math.random()}`,
+      id: generateFileId(),
       file,
       status: 'pending',
     }));
     
     setFiles((prev) => [...prev, ...fileInfos]);
     
-    // Process each file sequentially
-    for (const fileInfo of fileInfos) {
-      await processFile(fileInfo.id);
-    }
+    // Process all files in parallel instead of sequentially
+    const processingPromises = fileInfos.map((fileInfo) =>
+      processFile(fileInfo.id, fileInfo.file)
+    );
+    
+    await Promise.all(processingPromises);
     
     return fileInfos;
   };
 
-  const processFile = async (id: string): Promise<void> => {
+  /**
+   * Process individual file with progress tracking
+   * Captures file directly to avoid stale closure issues with state lookups
+   */
+  const processFile = async (id: string, file: File): Promise<void> => {
     updateFileStatus(id, 'processing');
     
-    const fileInfo = files.find((f) => f.id === id);
-    if (!fileInfo) return;
-
     try {
-      const text = await extractTextFromFile(fileInfo.file, (progress) => {
+      const text = await extractTextFromFile(file, (progress) => {
         updateFileProgress(id, progress);
       });
       
@@ -57,10 +72,12 @@ export function useFileUpload(): UseFileUploadReturn {
     }
   };
 
+  /** Remove file from list */
   const removeFile = (id: string): void => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
+  /** Update file status and optional metadata in batch */
   const updateFileStatus = (
     id: string,
     status: UploadedFileInfo['status'],
@@ -71,18 +88,21 @@ export function useFileUpload(): UseFileUploadReturn {
     );
   };
 
+  /** Update file processing progress (0-100) */
   const updateFileProgress = (id: string, progress: number): void => {
     setFiles((prev) =>
       prev.map((f) => (f.id === id ? { ...f, progress } : f))
     );
   };
 
+  /** Clear all files from list */
   const clearFiles = (): void => {
     setFiles([]);
   };
 
   /**
    * Get all successfully extracted text joined with separator
+   * Useful for creating study materials from multiple files
    */
   const getAllExtractedText = (): string => {
     return files
