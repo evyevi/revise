@@ -41,6 +41,7 @@ interface PlanResponse {
     correctIndex: number;
     explanation: string;
   }>;
+  recommendedMinutesPerDay: number;
 }
 
 /**
@@ -121,7 +122,7 @@ export default async function handler(
     const prompt = `You are an expert educational content analyst. Analyze the following study material and create a comprehensive study plan.
 
 Days available: ${daysAvailable}
-Minutes per day: ${minutesPerDay || 30}
+Minutes per day (user suggested): ${minutesPerDay || 30}
 
 Material:
 ${content.substring(0, MAX_CONTENT_LENGTH)}
@@ -160,7 +161,8 @@ Create a JSON response with this exact structure:
       "correctIndex": 0,
       "explanation": "Because Y"
     }
-  ]
+  ],
+  "recommendedMinutesPerDay": 35
 }
 
 Requirements:
@@ -170,6 +172,7 @@ Requirements:
 - Include 2-3 quiz questions per topic
 - Importance: high (most critical), medium (important), low (supplementary)
 - Estimated minutes should fit within daily limit
+- recommendedMinutesPerDay: AI-suggested optimal daily study time (${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY} range), computed from content complexity and ${daysAvailable} days available. Independent of user input.
 
 IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
 
@@ -202,9 +205,15 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
       !Array.isArray(planData.topics) ||
       !Array.isArray(planData.schedule) ||
       !Array.isArray(planData.flashcards) ||
-      !Array.isArray(planData.quizQuestions)
+      !Array.isArray(planData.quizQuestions) ||
+      typeof planData.recommendedMinutesPerDay !== 'number'
     ) {
-      throw new Error('Invalid response structure: missing required arrays');
+      throw new Error('Invalid response structure: missing required arrays or recommendedMinutesPerDay');
+    }
+
+    // Validate recommendedMinutesPerDay is within bounds
+    if (planData.recommendedMinutesPerDay < MIN_MINUTES_PER_DAY || planData.recommendedMinutesPerDay > MAX_MINUTES_PER_DAY) {
+      throw new Error(`recommendedMinutesPerDay out of range: must be ${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY}`);
     }
 
     res.status(200).json(planData);

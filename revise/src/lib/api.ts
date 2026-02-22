@@ -30,6 +30,7 @@ export interface PlanResponse {
     correctIndex: number;
     explanation: string;
   }>;
+  recommendedMinutesPerDay: number;
 }
 
 const API_TIMEOUT = 120000; // 2 minutes for AI processing
