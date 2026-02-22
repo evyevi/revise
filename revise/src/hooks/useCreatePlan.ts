@@ -39,6 +39,35 @@ export function getInitialWizardState(): WizardState {
   };
 }
 
+function computeDaysAvailable(testDate: Date | null): number {
+  if (!testDate) return 0;
+  const today = new Date();
+  const clamped = clampDateToToday(testDate, today);
+  return daysBetween(today, clamped);
+}
+
+function isStepValidInState(state: WizardState, step: number): boolean {
+  const daysAvailable = computeDaysAvailable(state.testDate);
+  
+  switch (step) {
+    case 1: // Upload step
+      return state.extractedText.length > 0;
+    case 2: // Test date step
+      return state.testDate !== null && daysAvailable > 0;
+    case 3: // Minutes step
+      return (
+        state.minutesPerDay !== null ||
+        state.recommendedMinutesPerDay !== null
+      );
+    case 4: // Generate step
+      return state.plan !== null;
+    case 5: // Review step
+      return state.plan !== null;
+    default:
+      return false;
+  }
+}
+
 function reducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case 'SET_EXTRACTED_TEXT':
@@ -56,7 +85,11 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
     case 'SET_GENERATING':
       return { ...state, isGenerating: action.payload };
     case 'NEXT_STEP':
-      return { ...state, step: state.step + 1 };
+      // Only advance if current step is valid
+      if (isStepValidInState(state, state.step)) {
+        return { ...state, step: state.step + 1 };
+      }
+      return state;
     case 'PREV_STEP':
       return { ...state, step: Math.max(1, state.step - 1) };
     case 'GO_TO_STEP':
@@ -120,10 +153,8 @@ export function useCreatePlan() {
   }, []);
 
   const nextStep = useCallback(() => {
-    if (canProceed) {
-      dispatch({ type: 'NEXT_STEP' });
-    }
-  }, [canProceed]);
+    dispatch({ type: 'NEXT_STEP' });
+  }, []);
 
   const prevStep = useCallback(() => {
     dispatch({ type: 'PREV_STEP' });
@@ -161,7 +192,7 @@ export function useCreatePlan() {
         request.minutesPerDay = state.minutesPerDay;
       }
 
-      const plan = await generateStudyPlan(request);
+      const plan = await generateStudyPlan(request, () => {});
 
       dispatch({ type: 'SET_PLAN', payload: plan });
       dispatch({ type: 'SET_RECOMMENDED_MINUTES', payload: plan.recommendedMinutesPerDay });
