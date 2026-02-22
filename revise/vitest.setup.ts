@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import '@testing-library/jest-dom';
 
 // Polyfill for PDF.js compatibility with jsdom
 if (typeof DOMMatrix === 'undefined') {
