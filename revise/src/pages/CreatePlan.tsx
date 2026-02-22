@@ -3,6 +3,7 @@ import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
 import { FilePreview } from '../components/FilePreview';
 import { DatePicker } from '../components/DatePicker';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { useCreatePlan } from '../hooks/useCreatePlan';
 
@@ -12,11 +13,14 @@ export function CreatePlan() {
     step,
     testDate,
     daysAvailable,
+    error,
+    isGenerating,
     canProceed,
     setExtractedText,
     setTestDate,
     nextStep,
     prevStep,
+    generatePlan,
   } = useCreatePlan();
 
   const handleFilesSelected = useCallback(async (newFiles: File[]) => {
@@ -90,6 +94,50 @@ export function CreatePlan() {
               <p className="mt-4 text-sm text-gray-600">
                 You have <span className="font-semibold">{daysAvailable} days</span> to study
               </p>
+            )}
+          </>
+        )}
+
+        {/* Step 3: Generate */}
+        {step === 3 && (
+          <>
+            <p className="text-gray-600 mb-6">Ready to generate your study plan</p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Test Date:</span>
+                <span className="font-semibold">
+                  {testDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Days Available:</span>
+                <span className="font-semibold">{daysAvailable} days</span>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={async () => {
+                await generatePlan();
+                // On success, hook will auto-advance if we add that logic
+              }}
+              className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
+            >
+              {isGenerating ? 'Generating...' : 'Generate Plan'}
+            </button>
+
+            {isGenerating && (
+              <div className="mt-4 flex justify-center">
+                <LoadingSpinner size="md" />
+              </div>
             )}
           </>
         )}
