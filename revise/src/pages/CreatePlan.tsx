@@ -233,7 +233,7 @@ export function CreatePlan() {
             <p className="text-gray-600 mb-6">Review your plan details</p>
             
             {error && (
-              <div className="text-red-600 mb-4">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm" role="alert">
                 {error}
               </div>
             )}
@@ -264,12 +264,14 @@ export function CreatePlan() {
               onClick={async () => {
                 try {
                   await savePlan(files);
-                  navigate('/');
+                  // Brief delay for user acknowledgment
+                  setTimeout(() => navigate('/'), 500);
                 } catch {
                   // Error already in hook state, will display
                 }
               }}
               disabled={isSaving}
+              aria-busy={isSaving}
               className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center gap-2"
             >
               {isSaving ? (
@@ -290,7 +292,8 @@ export function CreatePlan() {
             <button
               type="button"
               onClick={prevStep}
-              className="px-6 py-3 border border-gray-300 rounded-lg font-semibold active:scale-95 transition-all hover:bg-gray-50"
+              disabled={isSaving}
+              className="px-6 py-3 border border-gray-300 rounded-lg font-semibold active:scale-95 transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Back
             </button>
