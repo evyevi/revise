@@ -3,6 +3,7 @@ import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
 import { FilePreview } from '../components/FilePreview';
 import { useFileUpload } from '../hooks/useFileUpload';
+import { generateStudyPlan } from '../lib/api';
 
 export function CreatePlan() {
   const { files, addFiles, removeFile } = useFileUpload();
@@ -14,6 +15,13 @@ export function CreatePlan() {
   const completedFilesCount = files.filter((f) => f.status === 'completed').length;
   const hasError = files.some((f) => f.status === 'error');
   const isProcessing = files.some((f) => f.status === 'pending' || f.status === 'processing');
+
+  const getAllExtractedText = () => {
+    return files
+      .filter((f) => f.status === 'completed' && f.extractedText)
+      .map((f) => f.extractedText)
+      .join('\n\n');
+  };
 
   return (
     <Layout showBottomNav={false}>
@@ -49,6 +57,27 @@ export function CreatePlan() {
               <button
                 type="button"
                 disabled={isProcessing}
+                onClick={async () => {
+                  const text = getAllExtractedText();
+                  if (!text) {
+                    alert('No content extracted. Please try different files.');
+                    return;
+                  }
+                  
+                  try {
+                    const plan = await generateStudyPlan({
+                      content: text,
+                      daysAvailable: 7, // Default, will enhance later
+                      minutesPerDay: 30,
+                    });
+                    console.log('Generated study plan:', plan);
+                    // TODO: Save plan to DB and navigate
+                  } catch (error) {
+                    alert(
+                      error instanceof Error ? error.message : 'Failed to generate study plan'
+                    );
+                  }
+                }}
                 className="w-full mt-6 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 {isProcessing ? 'Processing...' : 'Continue to Study Plan'}
