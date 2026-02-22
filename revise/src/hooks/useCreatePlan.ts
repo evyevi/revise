@@ -15,7 +15,9 @@ function transformToStudyPlan(
 ): StudyPlan {
   return {
     id: crypto.randomUUID(),
-    subject: `${plan.topics[0].name} Study Plan`,
+    subject: plan.topics.length > 0 
+      ? `${plan.topics[0].name} Study Plan` 
+      : 'Study Plan',
     testDate,
     createdDate,
     totalDays: daysAvailable,

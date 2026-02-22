@@ -153,6 +153,27 @@ describe('useCreatePlan', () => {
     expect(typeof result.id).toBe('string');
   });
 
+  test('transformToStudyPlan handles empty topics array', () => {
+    const mockPlan: PlanResponse = {
+      topics: [], // Empty array
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    };
+    
+    const testDate = new Date('2026-03-01');
+    const createdDate = new Date('2026-02-22');
+    const daysAvailable = 7;
+    const minutesPerDay = 30;
+    
+    const result = transformToStudyPlan(mockPlan, testDate, createdDate, daysAvailable, minutesPerDay);
+    
+    expect(result.subject).toBe('Study Plan'); // Fallback name
+    expect(result.topics).toEqual([]);
+    expect(result.id).toBeTruthy();
+  });
+
   test('transformToStudyDays creates correct StudyDay entities', () => {
     const mockSchedule = [
       { dayNumber: 1, newTopicIds: ['t1'], reviewTopicIds: [], estimatedMinutes: 30 },
