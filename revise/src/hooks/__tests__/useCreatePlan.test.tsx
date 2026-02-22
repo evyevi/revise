@@ -30,4 +30,22 @@ describe('useCreatePlan', () => {
 
     expect(result.current.daysAvailable).toBe(2);
   });
+
+  it('advances steps only when current step is valid', () => {
+    const { result } = renderHook(() => useCreatePlan());
+
+    act(() => {
+      result.current.nextStep();
+    });
+
+    // No files/extracted text yet, should not advance
+    expect(result.current.step).toBe(1);
+
+    act(() => {
+      result.current.setExtractedText('Some content');
+      result.current.nextStep();
+    });
+
+    expect(result.current.step).toBe(2);
+  });
 });
