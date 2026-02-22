@@ -3,9 +3,9 @@ import { Home } from './pages/Home';
 import { CreatePlan } from './pages/CreatePlan';
 import { StudySession } from './pages/StudySession';
 import { Progress } from './pages/Progress';
-import { Profile } from './pages/Profile';
+import { NotFound } from './pages/NotFound';
 
-function App() {
+function App(): JSX.Element {
   return (
     <BrowserRouter>
       <Routes>
@@ -13,10 +13,10 @@ function App() {
         <Route path="/create-plan" element={<CreatePlan />} />
         <Route path="/study/:planId/:dayId" element={<StudySession />} />
         <Route path="/progress" element={<Progress />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
-export default App
+export default App;
