@@ -319,12 +319,12 @@ describe('useCreatePlan', () => {
     const mockTransaction = vi.fn().mockImplementation(async (mode, tables, callback) => {
       await callback();
     });
-    (db.transaction as any) = mockTransaction;
-    (db.studyPlans.add as any).mockResolvedValue('plan-id');
-    (db.studyDays.bulkAdd as any).mockResolvedValue(undefined);
-    (db.flashcards.bulkAdd as any).mockResolvedValue(undefined);
-    (db.quizQuestions.bulkAdd as any).mockResolvedValue(undefined);
-    (db.uploadedFiles.bulkAdd as any).mockResolvedValue(undefined);
+    (db.transaction as any) = mockTransaction; // eslint-disable-line @typescript-eslint/no-explicit-any
+    (db.studyPlans.add as any).mockResolvedValue('plan-id'); // eslint-disable-line @typescript-eslint/no-explicit-any
+    (db.studyDays.bulkAdd as any).mockResolvedValue(undefined); // eslint-disable-line @typescript-eslint/no-explicit-any
+    (db.flashcards.bulkAdd as any).mockResolvedValue(undefined); // eslint-disable-line @typescript-eslint/no-explicit-any
+    (db.quizQuestions.bulkAdd as any).mockResolvedValue(undefined); // eslint-disable-line @typescript-eslint/no-explicit-any
+    (db.uploadedFiles.bulkAdd as any).mockResolvedValue(undefined); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const { result } = renderHook(() => useCreatePlan());
     
@@ -367,7 +367,7 @@ describe('useCreatePlan', () => {
   test('savePlan sets error state when database save fails', async () => {
     // Setup mock to fail
     const mockTransaction = vi.fn().mockRejectedValue(new Error('Database error'));
-    (db.transaction as any) = mockTransaction;
+    (db.transaction as any) = mockTransaction; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const { result } = renderHook(() => useCreatePlan());
     
