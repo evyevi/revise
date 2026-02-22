@@ -76,4 +76,31 @@ describe('useCreatePlan', () => {
     );
     expect(result.current.recommendedMinutesPerDay).toBe(30);
   });
+
+  it('sends minutesPerDay when user sets it', async () => {
+    const { result } = renderHook(() => useCreatePlan());
+
+    act(() => {
+      result.current.setExtractedText('content');
+      result.current.setTestDate(new Date('2026-02-24T00:00:00Z'));
+      result.current.setMinutesPerDay(45);
+    });
+
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [],
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    });
+
+    await act(async () => {
+      await result.current.generatePlan();
+    });
+
+    expect(generateStudyPlan).toHaveBeenCalledWith(
+      { content: 'content', daysAvailable: 2, minutesPerDay: 45 },
+      expect.any(Function)
+    );
+  });
 });
