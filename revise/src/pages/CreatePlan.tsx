@@ -212,6 +212,46 @@ export function CreatePlan() {
           </>
         )}
 
+        {/* Step 5: Save */}
+        {step === 5 && plan && (
+          <>
+            <p className="text-gray-600 mb-6">Review your plan details</p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Topics:</span>
+                <span className="font-semibold">{plan.topics.length} topics</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Test Date:</span>
+                <span className="font-semibold">
+                  {testDate?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Daily Study Time:</span>
+                <span className="font-semibold">{minutesPerDay ?? recommendedMinutesPerDay} minutes</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Days:</span>
+                <span className="font-semibold">{plan.schedule.length} days</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                // TODO: Save to DB in Task 8.6
+                console.log('Plan ready to save:', plan);
+                alert('Save to DB will be implemented in Task 8.6');
+              }}
+              className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600"
+            >
+              Save Plan
+            </button>
+          </>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex gap-3 mt-6">
           {step > 1 && (

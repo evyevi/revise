@@ -98,4 +98,29 @@ describe('CreatePlan wizard', () => {
     expect(screen.getByText(/your study plan/i)).toBeInTheDocument();
     expect(screen.getByText(/1 topics/i)).toBeInTheDocument();
   });
+
+  it('renders step 5 (save) with confirmation', () => {
+    const mockPlan = {
+      topics: [{ id: '1', name: 'Math', importance: 'high' as const, keyPoints: [], estimatedMinutes: 60 }],
+      schedule: [{ dayNumber: 1, newTopicIds: ['1'], reviewTopicIds: [], estimatedMinutes: 30 }],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    };
+
+    const mockUseCreatePlan = vi.mocked(useCreatePlan);
+    mockUseCreatePlan.mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 5,
+      plan: mockPlan,
+      testDate: new Date('2026-02-24'),
+      daysAvailable: 2,
+      minutesPerDay: 30,
+      canProceed: true,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    expect(screen.getByText(/review your plan/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save plan/i })).toBeInTheDocument();
+  });
 });
