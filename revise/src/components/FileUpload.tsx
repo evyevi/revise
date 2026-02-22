@@ -19,15 +19,19 @@ export function FileUpload({ onFilesSelected, acceptedTypes = '.pdf,.txt,.jpg,.j
   return (
     <div className="space-y-4">
       <button
+        type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="w-full bg-primary-500 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg active:scale-95 transition-transform"
+        className="w-full bg-primary-500 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg active:scale-95 transition-transform hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-400"
+        aria-label="Upload files from device"
       >
         📁 Upload Files
       </button>
       
       <button
+        type="button"
         onClick={() => cameraInputRef.current?.click()}
-        className="w-full bg-accent-200 text-gray-800 py-4 px-6 rounded-xl font-semibold text-lg shadow-lg active:scale-95 transition-transform"
+        className="w-full bg-accent-200 text-gray-800 py-4 px-6 rounded-xl font-semibold text-lg shadow-lg active:scale-95 transition-transform hover:bg-accent-300 focus:outline-none focus:ring-2 focus:ring-accent-200"
+        aria-label="Take photo with camera"
       >
         📸 Take Photo
       </button>
@@ -39,6 +43,7 @@ export function FileUpload({ onFilesSelected, acceptedTypes = '.pdf,.txt,.jpg,.j
         multiple
         onChange={handleFileChange}
         className="hidden"
+        aria-hidden="true"
       />
       
       <input
@@ -48,6 +53,7 @@ export function FileUpload({ onFilesSelected, acceptedTypes = '.pdf,.txt,.jpg,.j
         capture="environment"
         onChange={handleFileChange}
         className="hidden"
+        aria-hidden="true"
       />
     </div>
   );
