@@ -1,20 +1,17 @@
 import { extractTextFromPDF } from './pdfExtractor';
+import { extractTextFromImage } from './imageExtractor';
 
 /**
- * Extract text from uploaded file
- * @param file - File to extract text from
+ * Extract text from various file types
+ * @param file - File to extract text from (PDF, TXT, JPG, PNG)
+ * @param onProgress - Optional callback for OCR progress (0-100)
  * @returns Extracted text content
  * @throws Error if file type is unsupported or extraction fails
- * 
- * Supported formats:
- * - PDF files (.pdf)
- * - Plain text files (.txt, text/plain)
- * 
- * Browser Requirements:
- * - File.text() requires modern browsers (ES2020+)
- * - PDF.js worker loaded from CDN
  */
-export async function extractTextFromFile(file: File): Promise<string> {
+export async function extractTextFromFile(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string> {
   const fileType = file.type.toLowerCase();
   const fileName = file.name.toLowerCase();
 
@@ -33,9 +30,18 @@ export async function extractTextFromFile(file: File): Promise<string> {
     }
   }
 
-  // For now, throw error for unsupported types
-  // We'll add image OCR and PowerPoint in next tasks
+  // Image files
+  if (
+    fileType.startsWith('image/') ||
+    fileName.endsWith('.jpg') ||
+    fileName.endsWith('.jpeg') ||
+    fileName.endsWith('.png')
+  ) {
+    return extractTextFromImage(file, onProgress);
+  }
+
   throw new Error(`Unsupported file type: ${fileType}`);
 }
 
 export { extractTextFromPDF } from './pdfExtractor';
+export { extractTextFromImage } from './imageExtractor';
