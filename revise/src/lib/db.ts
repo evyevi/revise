@@ -1,5 +1,5 @@
-import Dexie, { Table } from 'dexie';
-import {
+import Dexie, { type Table } from 'dexie';
+import type {
   StudyPlan,
   StudyDay,
   Flashcard,
