@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
 import { FilePreview } from '../components/FilePreview';
@@ -6,9 +7,9 @@ import { useFileUpload } from '../hooks/useFileUpload';
 export function CreatePlan() {
   const { files, addFiles, removeFile } = useFileUpload();
 
-  const handleFilesSelected = (newFiles: File[]) => {
+  const handleFilesSelected = useCallback((newFiles: File[]) => {
     addFiles(newFiles);
-  };
+  }, [addFiles]);
 
   return (
     <Layout showBottomNav={false}>
@@ -20,12 +21,16 @@ export function CreatePlan() {
         
         {files.length > 0 && (
           <div className="mt-6 space-y-3">
-            <h2 className="font-semibold text-gray-700">Uploaded Files ({files.length})</h2>
+            <h2 className="font-semibold text-gray-700">
+              Uploaded Files ({files.length})
+            </h2>
             {files.map((fileInfo) => (
               <FilePreview
                 key={fileInfo.id}
                 fileName={fileInfo.file.name}
                 fileSize={fileInfo.file.size}
+                status={fileInfo.status}
+                error={fileInfo.error}
                 onRemove={() => removeFile(fileInfo.id)}
               />
             ))}
