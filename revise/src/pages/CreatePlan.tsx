@@ -4,6 +4,7 @@ import { FileUpload } from '../components/FileUpload';
 import { FilePreview } from '../components/FilePreview';
 import { DatePicker } from '../components/DatePicker';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { MinutesInput } from '../components/MinutesInput';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { useCreatePlan } from '../hooks/useCreatePlan';
 
@@ -13,11 +14,15 @@ export function CreatePlan() {
     step,
     testDate,
     daysAvailable,
+    recommendedMinutesPerDay,
+    minutesPerDay,
+    plan,
     error,
     isGenerating,
     canProceed,
     setExtractedText,
     setTestDate,
+    setMinutesPerDay,
     nextStep,
     prevStep,
     generatePlan,
@@ -139,6 +144,65 @@ export function CreatePlan() {
                 <LoadingSpinner size="md" />
               </div>
             )}
+          </>
+        )}
+
+        {/* Step 4: Review & Adjust */}
+        {step === 4 && plan && (
+          <>
+            <p className="text-gray-600 mb-6">Your Study Plan</p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Topics:</span>
+                <span className="font-semibold">{plan.topics.length} topics</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Study Days:</span>
+                <span className="font-semibold">{plan.schedule.length} days</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Flashcards:</span>
+                <span className="font-semibold">{plan.flashcards.length} cards</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Quiz Questions:</span>
+                <span className="font-semibold">{plan.quizQuestions.length} questions</span>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Daily Study Time
+              </label>
+              <MinutesInput
+                value={minutesPerDay ?? recommendedMinutesPerDay ?? 30}
+                onChange={setMinutesPerDay}
+                label=""
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                AI recommended: {recommendedMinutesPerDay} minutes/day
+              </p>
+            </div>
+
+            {minutesPerDay !== null && minutesPerDay !== recommendedMinutesPerDay && (
+              <button
+                type="button"
+                disabled={isGenerating}
+                onClick={generatePlan}
+                className="w-full mb-3 border-2 border-primary-500 text-primary-600 py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-50 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                {isGenerating ? 'Regenerating...' : 'Regenerate Plan'}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={nextStep}
+              className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600"
+            >
+              Continue
+            </button>
           </>
         )}
 
