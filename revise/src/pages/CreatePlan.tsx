@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
 import { FilePreview } from '../components/FilePreview';
@@ -9,6 +10,7 @@ import { useFileUpload } from '../hooks/useFileUpload';
 import { useCreatePlan } from '../hooks/useCreatePlan';
 
 export function CreatePlan() {
+  const navigate = useNavigate();
   const { files, addFiles, removeFile, getAllExtractedText } = useFileUpload();
   const {
     step,
@@ -26,6 +28,8 @@ export function CreatePlan() {
     nextStep,
     prevStep,
     generatePlan,
+    savePlan,
+    isSaving,
   } = useCreatePlan();
 
   const handleFilesSelected = useCallback(async (newFiles: File[]) => {
@@ -228,6 +232,12 @@ export function CreatePlan() {
           <>
             <p className="text-gray-600 mb-6">Review your plan details</p>
             
+            {error && (
+              <div className="text-red-600 mb-4">
+                {error}
+              </div>
+            )}
+            
             <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Topics:</span>
@@ -251,14 +261,25 @@ export function CreatePlan() {
 
             <button
               type="button"
-              onClick={() => {
-                // TODO: Save to DB in Task 8.6
-                console.log('Plan ready to save:', plan);
-                alert('Save to DB will be implemented in Task 8.6');
+              onClick={async () => {
+                try {
+                  await savePlan(files);
+                  navigate('/');
+                } catch {
+                  // Error already in hook state, will display
+                }
               }}
-              className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600"
+              disabled={isSaving}
+              className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center gap-2"
             >
-              Save Plan
+              {isSaving ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                'Save Plan'
+              )}
             </button>
           </>
         )}
