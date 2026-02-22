@@ -1,7 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, test } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useCreatePlan, getInitialWizardState } from '../useCreatePlan';
+import { 
+  useCreatePlan, 
+  getInitialWizardState,
+  transformToStudyPlan,
+  transformToStudyDays,
+  transformToFlashcards,
+  transformToQuizQuestions,
+  transformToUploadedFiles,
+} from '../useCreatePlan';
 import { generateStudyPlan } from '../../lib/api';
+import type { PlanResponse } from '../../lib/api';
 
 vi.mock('../../lib/api', () => ({
   generateStudyPlan: vi.fn(),
@@ -107,5 +116,137 @@ describe('useCreatePlan', () => {
   it('isSaving state starts as false', () => {
     const { result } = renderHook(() => useCreatePlan());
     expect(result.current.isSaving).toBe(false);
+  });
+
+  test('transformToStudyPlan creates correct StudyPlan structure', () => {
+    const mockPlan: PlanResponse = {
+      topics: [
+        { id: 't1', name: 'Biology Basics', importance: 'high' as const, keyPoints: ['Cell structure'], estimatedMinutes: 30 },
+        { id: 't2', name: 'Chemistry', importance: 'medium' as const, keyPoints: ['Atoms'], estimatedMinutes: 20 },
+      ],
+      schedule: [],
+      flashcards: [],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 45,
+    };
+    
+    const testDate = new Date('2026-03-01');
+    const createdDate = new Date('2026-02-22');
+    const daysAvailable = 7;
+    const minutesPerDay = 45;
+    
+    // This function doesn't exist yet - will fail
+    const result = transformToStudyPlan(mockPlan, testDate, createdDate, daysAvailable, minutesPerDay);
+    
+    expect(result).toMatchObject({
+      subject: 'Biology Basics Study Plan',
+      testDate,
+      createdDate,
+      totalDays: 7,
+      suggestedMinutesPerDay: 45,
+      topics: [
+        { id: 't1', name: 'Biology Basics', importance: 'high', keyPoints: ['Cell structure'] },
+        { id: 't2', name: 'Chemistry', importance: 'medium', keyPoints: ['Atoms'] },
+      ],
+    });
+    expect(result.id).toBeTruthy();
+    expect(typeof result.id).toBe('string');
+  });
+
+  test('transformToStudyDays creates correct StudyDay entities', () => {
+    const mockSchedule = [
+      { dayNumber: 1, newTopicIds: ['t1'], reviewTopicIds: [], estimatedMinutes: 30 },
+      { dayNumber: 2, newTopicIds: ['t2'], reviewTopicIds: ['t1'], estimatedMinutes: 40 },
+    ];
+    
+    const planId = 'plan-123';
+    const createdDate = new Date('2026-02-22T00:00:00Z');
+    
+    const result = transformToStudyDays(mockSchedule, planId, createdDate);
+    
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({
+      planId: 'plan-123',
+      dayNumber: 1,
+      completed: false,
+      newTopicIds: ['t1'],
+      reviewTopicIds: [],
+      flashcardIds: [],
+      quizIds: [],
+      estimatedMinutes: 30,
+    });
+    expect(result[0].id).toBeTruthy();
+    expect(result[0].date.getTime()).toBe(createdDate.getTime());
+    
+    // Day 2 should be createdDate + 1 day
+    const expectedDay2 = new Date(createdDate.getTime() + 86400000);
+    expect(result[1].date.getTime()).toBe(expectedDay2.getTime());
+  });
+
+  test('transformToFlashcards creates correct Flashcard entities', () => {
+    const mockFlashcards = [
+      { topicId: 't1', front: 'What is a cell?', back: 'Basic unit of life' },
+      { topicId: 't2', front: 'What is an atom?', back: 'Smallest unit of matter' },
+    ];
+    
+    const result = transformToFlashcards(mockFlashcards);
+    
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({
+      topicId: 't1',
+      front: 'What is a cell?',
+      back: 'Basic unit of life',
+      reviewDates: [],
+      masteryLevel: 0,
+    });
+    expect(result[0].id).toBeTruthy();
+    expect(result[0].firstShownDate).toBeUndefined();
+    expect(result[0].needsPractice).toBe(false);
+  });
+
+  test('transformToQuizQuestions creates correct QuizQuestion entities', () => {
+    const mockQuestions = [
+      {
+        topicId: 't1',
+        question: 'What is photosynthesis?',
+        options: ['A', 'B', 'C', 'D'],
+        correctIndex: 2,
+        explanation: 'Because...',
+      },
+    ];
+    
+    const result = transformToQuizQuestions(mockQuestions);
+    
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      topicId: 't1',
+      question: 'What is photosynthesis?',
+      options: ['A', 'B', 'C', 'D'],
+      correctAnswerIndex: 2,  // Note: field name mapping
+      explanation: 'Because...',
+    });
+    expect(result[0].id).toBeTruthy();
+  });
+
+  test('transformToUploadedFiles creates correct UploadedFile entities', () => {
+    const mockFiles = [
+      new File(['content'], 'test.pdf', { type: 'application/pdf' }),
+    ];
+    const planId = 'plan-123';
+    const extractedText = 'Extracted text from all files';
+    
+    const result = transformToUploadedFiles(mockFiles, planId, extractedText);
+    
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      planId: 'plan-123',
+      fileName: 'test.pdf',
+      fileType: 'application/pdf',
+      extractedText: 'Extracted text from all files',
+    });
+    expect(result[0].id).toBeTruthy();
+    expect(result[0].uploadedAt).toBeInstanceOf(Date);
+    expect(result[0].fileBlob).toBe(mockFiles[0]);
+    expect(result[0].fileSize).toBeGreaterThan(0);
   });
 });
