@@ -10,6 +10,7 @@ export interface WizardState {
   minutesPerDay: number | null;
   plan: PlanResponse | null;
   isGenerating: boolean;
+  isSaving: boolean;
   error: string | null;
 }
 
@@ -21,6 +22,7 @@ type WizardAction =
   | { type: 'SET_PLAN'; payload: PlanResponse | null }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_GENERATING'; payload: boolean }
+  | { type: 'SET_SAVING'; payload: boolean }
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
   | { type: 'GO_TO_STEP'; payload: number }
@@ -35,6 +37,7 @@ export function getInitialWizardState(): WizardState {
     minutesPerDay: null,
     plan: null,
     isGenerating: false,
+    isSaving: false,
     error: null,
   };
 }
@@ -84,6 +87,8 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, error: action.payload };
     case 'SET_GENERATING':
       return { ...state, isGenerating: action.payload };
+    case 'SET_SAVING':
+      return { ...state, isSaving: action.payload };
     case 'NEXT_STEP':
       // Only advance if current step is valid
       if (isStepValidInState(state, state.step)) {
@@ -221,5 +226,6 @@ export function useCreatePlan() {
     generatePlan,
     reset,
     clearError,
+    isSaving: state.isSaving,
   };
 }
