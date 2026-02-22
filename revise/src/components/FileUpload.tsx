@@ -5,7 +5,10 @@ interface FileUploadProps {
   acceptedTypes?: string;
 }
 
-export function FileUpload({ onFilesSelected, acceptedTypes = '.pdf,.txt,.jpg,.jpeg,.png,.pptx' }: FileUploadProps) {
+export function FileUpload({ 
+  onFilesSelected, 
+  acceptedTypes = '.pdf,.txt,.jpg,.jpeg,.png' 
+}: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
