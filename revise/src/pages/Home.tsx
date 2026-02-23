@@ -22,7 +22,7 @@ export function Home() {
     setStats({
       xp: userStats.totalXP,
       streak: userStats.currentStreak,
-      totalPlans: 0, // Will calculate from completed plans
+      totalPlans: 0, // Will be calculated from completed plans
       activePlans: 0,
     });
 
@@ -36,11 +36,17 @@ export function Home() {
 
     const progressMap = new Map<string, number>();
     const completedTodaySet = new Set<string>();
+    let completedPlansCount = 0;
 
     for (const plan of allPlans) {
       const days = await db.studyDays.where('planId').equals(plan.id).toArray();
       const completedCount = days.filter((d) => d.completed).length;
       progressMap.set(plan.id, completedCount);
+
+      // Check if plan is fully completed (all study days done)
+      if (completedCount === plan.totalDays) {
+        completedPlansCount++;
+      }
 
       // Check if today's session is completed
       const todaySession = days.find(
@@ -54,10 +60,11 @@ export function Home() {
     setDayProgress(progressMap);
     setTodayCompleted(completedTodaySet);
 
-    // Update active plans count
+    // Update active plans count and completed plans count
     setStats((prev) => ({
       ...prev,
       activePlans: allPlans.length,
+      totalPlans: completedPlansCount,
     }));
   };
 
