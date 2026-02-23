@@ -29,21 +29,66 @@ function generateFileId(): string {
 export function useFileUpload(): UseFileUploadReturn {
   const [files, setFiles] = useState<UploadedFileInfo[]>([]);
 
+  // File validation constants
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'text/plain',
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+  ];
+
+  /**
+   * Validate file before processing
+   * Returns error message if invalid, null if valid
+   */
+  const validateFile = (file: File): string | null => {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      return `File is too large. Maximum size is 50MB.`;
+    }
+
+    // Check file type
+    const fileType = file.type.toLowerCase();
+    const fileName = file.name.toLowerCase();
+    
+    const isValidType = 
+      ALLOWED_TYPES.includes(fileType) ||
+      fileName.endsWith('.pdf') ||
+      fileName.endsWith('.txt') ||
+      fileName.endsWith('.jpg') ||
+      fileName.endsWith('.jpeg') ||
+      fileName.endsWith('.png');
+
+    if (!isValidType) {
+      return `Unsupported file type. Please upload PDF, TXT, or image files.`;
+    }
+
+    return null;
+  };
+
   /**
    * Add and process multiple files in parallel
    * Each file is processed independently to extract text
    */
   const addFiles = async (newFiles: File[]): Promise<UploadedFileInfo[]> => {
-    const fileInfos: UploadedFileInfo[] = newFiles.map((file) => ({
-      id: generateFileId(),
-      file,
-      status: 'pending',
-    }));
+    const fileInfos: UploadedFileInfo[] = newFiles.map((file) => {
+      const validationError = validateFile(file);
+      
+      return {
+        id: generateFileId(),
+        file,
+        status: validationError ? 'error' : 'pending',
+        error: validationError || undefined,
+      };
+    });
     
     setFiles((prev) => [...prev, ...fileInfos]);
     
-    // Process all files in parallel instead of sequentially
-    const processingPromises = fileInfos.map((fileInfo) =>
+    // Process only valid files in parallel
+    const validFileInfos = fileInfos.filter((f) => f.status === 'pending');
+    const processingPromises = validFileInfos.map((fileInfo) =>
       processFile(fileInfo.id, fileInfo.file)
     );
     

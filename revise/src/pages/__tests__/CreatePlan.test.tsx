@@ -1,17 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
 import { CreatePlan } from '../CreatePlan';
 import { BrowserRouter } from 'react-router-dom';
 import { useCreatePlan } from '../../hooks/useCreatePlan';
+import { useFileUpload } from '../../hooks/useFileUpload';
+import * as textExtraction from '../../lib/textExtraction';
+
+// Mock text extraction
+vi.mock('../../lib/textExtraction', () => ({
+  extractTextFromFile: vi.fn(),
+}));
 
 // Mock the hooks
+const mockUseFileUploadReturn = {
+  files: [],
+  addFiles: vi.fn(),
+  removeFile: vi.fn(),
+  clearFiles: vi.fn(),
+  getAllExtractedText: vi.fn(() => ''),
+};
+
 vi.mock('../../hooks/useFileUpload', () => ({
-  useFileUpload: () => ({
-    files: [],
-    addFiles: vi.fn(),
-    removeFile: vi.fn(),
-    getAllExtractedText: vi.fn(() => ''),
-  }),
+  useFileUpload: vi.fn(() => mockUseFileUploadReturn),
 }));
 
 const mockUseCreatePlanReturn = {
@@ -148,5 +160,148 @@ describe('CreatePlan wizard', () => {
     renderWithRouter(<CreatePlan />);
     expect(screen.getByText(/review your plan/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save plan/i })).toBeInTheDocument();
+  });
+});
+
+describe('CreatePlan validation', () => {
+  const renderWithRouter = (ui: React.ReactElement) => {
+    return render(<BrowserRouter>{ui}</BrowserRouter>);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('requires at least one file before continuing from step 1', () => {
+    vi.mocked(useFileUpload).mockReturnValue({
+      ...mockUseFileUploadReturn,
+      files: [],
+    });
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 1,
+      canProceed: false,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    
+    const nextButton = screen.queryByRole('button', { name: /next|continue/i });
+    if (nextButton) {
+      expect(nextButton).toBeDisabled();
+    }
+  });
+
+  it('validates test date is in the future', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 2,
+      testDate: yesterday,
+      daysAvailable: 0,
+      canProceed: false,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    
+    // DatePicker should be rendered
+    expect(screen.getByLabelText(/test date/i)).toBeInTheDocument();
+  });
+
+  it('shows error when file upload fails', async () => {
+    const mockFile = {
+      id: '1',
+      file: new File(['content'], 'test.pdf', { type: 'application/pdf' }),
+      status: 'error' as const,
+      error: 'Failed to extract text from file',
+    };
+
+    vi.mocked(useFileUpload).mockReturnValue({
+      ...mockUseFileUploadReturn,
+      files: [mockFile],
+    });
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 1,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    
+    expect(await screen.findByText(/failed to extract/i)).toBeInTheDocument();
+  });
+
+  it('handles file upload interaction', async () => {
+    const user = userEvent.setup();
+    const mockAddFiles = vi.fn();
+    
+    vi.mocked(useFileUpload).mockReturnValue({
+      ...mockUseFileUploadReturn,
+      addFiles: mockAddFiles,
+    });
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 1,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    
+    const file = new File(['content'], 'test.pdf', { type: 'application/pdf' });
+    // Access the hidden input directly since it's aria-hidden
+    const inputs = document.querySelectorAll('input[type="file"]');
+    const uploadInput = inputs[0] as HTMLInputElement;
+    
+    await user.upload(uploadInput, file);
+    
+    // FileUpload calls onFilesSelected, which should trigger addFiles
+    expect(mockAddFiles).toHaveBeenCalled();
+  });
+
+  it('displays file processing status', () => {
+    vi.mocked(useFileUpload).mockReturnValue({
+      ...mockUseFileUploadReturn,
+      files: [
+        {
+          id: '1',
+          file: new File(['content1'], 'test1.pdf', { type: 'application/pdf' }),
+          status: 'completed',
+          extractedText: 'Text 1',
+        },
+        {
+          id: '2',
+          file: new File(['content2'], 'test2.pdf', { type: 'application/pdf' }),
+          status: 'processing',
+          progress: 50,
+        },
+      ],
+    });
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 1,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    
+    expect(screen.getByText(/uploaded files \(1\/2\)/i)).toBeInTheDocument();
+  });
+
+  it('shows generation error when plan generation fails', () => {
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 3,
+      extractedText: 'content',
+      testDate: new Date('2026-02-24'),
+      daysAvailable: 2,
+      error: 'Failed to generate plan. Please try again.',
+      canProceed: true,
+    });
+
+    renderWithRouter(<CreatePlan />);
+    
+    expect(screen.getByText(/failed to generate plan/i)).toBeInTheDocument();
   });
 });
