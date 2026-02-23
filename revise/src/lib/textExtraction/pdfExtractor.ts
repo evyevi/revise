@@ -1,18 +1,24 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
+
+type PdfDocumentLoadingTask = { promise: Promise<PDFDocumentProxy> };
+type PdfJsLib = {
+  GlobalWorkerOptions: { workerSrc: string };
+  version: string;
+  getDocument: (src: { data: ArrayBuffer }) => PdfDocumentLoadingTask;
+};
+
+const pdfjs = pdfjsLib as unknown as PdfJsLib;
 
 // Configure legacy worker from CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/legacy/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/legacy/build/pdf.worker.min.js`;
 
 const PAGE_SEPARATOR = '\n\n'; // Double newline separates pages for readability
-
-interface TextItem {
-  str: string;
-}
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     
     const textParts: string[] = [];
     
@@ -21,7 +27,8 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
-        .map((item: TextItem) => item.str)
+        .map((item) => ('str' in item && typeof item.str === 'string' ? item.str : ''))
+        .filter((value) => value.length > 0)
         .join(' ');
       textParts.push(pageText);
     }

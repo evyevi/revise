@@ -7,6 +7,7 @@ interface CompletionScreenProps {
 export function CompletionScreen({
   xpEarned,
   quizScore,
+  onHome,
 }: CompletionScreenProps) {
   const scorePercentage = Math.round(quizScore);
 

@@ -103,7 +103,7 @@ export function StudySession() {
                 const correctXP = (correct / quizCount) * 50;
                 const totalXP = Math.round(baseXP + correctXP);
 
-                session.completeSession(totalXP, session.studyDay?.id || '');
+                void session.completeSession(totalXP, session.studyDay?.id || '');
               }
             }}
             onPrev={session.prevQuiz}

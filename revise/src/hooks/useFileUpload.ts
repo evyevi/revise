@@ -145,14 +145,20 @@ export function useFileUpload(): UseFileUploadReturn {
     setFiles([]);
   };
 
+  const isCompletedWithText = (
+    file: UploadedFileInfo
+  ): file is UploadedFileInfo & { extractedText: string } => {
+    return file.status === 'completed' && typeof file.extractedText === 'string';
+  };
+
   /**
    * Get all successfully extracted text joined with separator
    * Useful for creating study materials from multiple files
    */
   const getAllExtractedText = (): string => {
     return files
-      .filter((f) => f.status === 'completed' && f.extractedText)
-      .map((f) => f.extractedText!)
+      .filter(isCompletedWithText)
+      .map((f) => f.extractedText)
       .join('\n\n---\n\n');
   };
 
