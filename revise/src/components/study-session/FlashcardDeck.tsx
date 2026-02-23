@@ -19,7 +19,7 @@ export function FlashcardDeck({
   const [isFlipped, setIsFlipped] = useState(false);
   const card = cards[currentIndex];
 
-  if (cards.length === 0) {
+  if (cards.length === 0 || !card) {
     return (
       <div className="p-6 text-center">
         <p className="text-gray-600 mb-4">No flashcards for today</p>
@@ -34,7 +34,7 @@ export function FlashcardDeck({
   }
 
   return (
-    <div className="p-6 flex flex-col h-screen">
+    <div className="p-6 flex flex-col min-h-[100dvh] pb-[env(safe-area-inset-bottom)]">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">Flashcards</h1>
         <p className="text-gray-600 text-sm">
