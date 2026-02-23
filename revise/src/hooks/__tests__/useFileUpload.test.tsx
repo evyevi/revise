@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFileUpload } from '../useFileUpload';
 import * as textExtraction from '../../lib/textExtraction';
 
@@ -26,7 +26,9 @@ describe('useFileUpload', () => {
     const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
     
     // Don't await - we want to check the status while processing
-    result.current.addFiles([mockFile]);
+    act(() => {
+      void result.current.addFiles([mockFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files).toHaveLength(1);
@@ -42,7 +44,9 @@ describe('useFileUpload', () => {
     const { result } = renderHook(() => useFileUpload());
     const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
     
-    await result.current.addFiles([mockFile]);
+    act(() => {
+      void result.current.addFiles([mockFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files[0].status).toBe('completed');
@@ -56,7 +60,9 @@ describe('useFileUpload', () => {
     const { result } = renderHook(() => useFileUpload());
     const mockFile = new File(['content'], 'test.pdf', { type: 'application/pdf' });
     
-    await result.current.addFiles([mockFile]);
+    act(() => {
+      void result.current.addFiles([mockFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files[0].status).toBe('error');
@@ -68,14 +74,18 @@ describe('useFileUpload', () => {
     const { result } = renderHook(() => useFileUpload());
     const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
     
-    await result.current.addFiles([mockFile]);
+    await act(async () => {
+      await result.current.addFiles([mockFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files).toHaveLength(1);
     });
     
     const fileId = result.current.files[0].id;
-    result.current.removeFile(fileId);
+    act(() => {
+      result.current.removeFile(fileId);
+    });
     
     await waitFor(() => {
       expect(result.current.files).toHaveLength(0);
@@ -89,13 +99,17 @@ describe('useFileUpload', () => {
       new File(['content2'], 'test2.txt', { type: 'text/plain' }),
     ];
     
-    await result.current.addFiles(mockFiles);
+    await act(async () => {
+      await result.current.addFiles(mockFiles);
+    });
     
     await waitFor(() => {
       expect(result.current.files).toHaveLength(2);
     });
     
-    result.current.clearFiles();
+    act(() => {
+      result.current.clearFiles();
+    });
     
     await waitFor(() => {
       expect(result.current.files).toHaveLength(0);
@@ -113,7 +127,9 @@ describe('useFileUpload', () => {
       new File(['content2'], 'test2.txt', { type: 'text/plain' }),
     ];
     
-    await result.current.addFiles(mockFiles);
+    await act(async () => {
+      await result.current.addFiles(mockFiles);
+    });
     
     await waitFor(() => {
       const allText = result.current.getAllExtractedText();
@@ -123,6 +139,7 @@ describe('useFileUpload', () => {
   });
 
   it('handles timeout for slow file processing', async () => {
+    vi.useFakeTimers();
     // Mock a slow extraction that takes 10 seconds
     vi.mocked(textExtraction.extractTextFromFile).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve('Slow text'), 10000))
@@ -131,10 +148,21 @@ describe('useFileUpload', () => {
     const { result } = renderHook(() => useFileUpload());
     const mockFile = new File(['content'], 'large.pdf', { type: 'application/pdf' });
     
-    await result.current.addFiles([mockFile]);
-    
-    // Should still be processing after a short time
-    expect(result.current.files[0].status).toBe('processing');
+    try {
+      act(() => {
+        void result.current.addFiles([mockFile]);
+      });
+
+      // Allow state updates to flush before checking status
+      await act(async () => {
+        await Promise.resolve();
+      });
+      
+      // Should still be processing after a short time
+      expect(result.current.files[0].status).toBe('processing');
+    } finally {
+      vi.useRealTimers();
+    }
   }, 15000);
 
   it('tracks progress for files with progress callback', async () => {
@@ -152,7 +180,9 @@ describe('useFileUpload', () => {
     const { result } = renderHook(() => useFileUpload());
     const mockFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
     
-    await result.current.addFiles([mockFile]);
+    await act(async () => {
+      await result.current.addFiles([mockFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files[0].progress).toBeGreaterThan(0);
@@ -168,7 +198,9 @@ describe('useFileUpload', () => {
     });
     Object.defineProperty(largeFile, 'size', { value: 51 * 1024 * 1024 });
     
-    await result.current.addFiles([largeFile]);
+    await act(async () => {
+      await result.current.addFiles([largeFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files[0].status).toBe('error');
@@ -182,7 +214,9 @@ describe('useFileUpload', () => {
       type: 'application/x-msdownload' 
     });
     
-    await result.current.addFiles([invalidFile]);
+    await act(async () => {
+      await result.current.addFiles([invalidFile]);
+    });
     
     await waitFor(() => {
       expect(result.current.files[0].status).toBe('error');

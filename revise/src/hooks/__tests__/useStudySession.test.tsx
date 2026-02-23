@@ -98,12 +98,16 @@ describe('useStudySession', () => {
     vi.mocked(planQueries.getQuizzesByTopicIds).mockResolvedValue(mockQuizzes);
   });
 
-  it('should initialize with loading state', () => {
+  it('should initialize with loading state', async () => {
     const { result } = renderHook(() => useStudySession(mockPlanId));
     
     expect(result.current.step).toBe('loading');
     expect(result.current.studyDay).toBeNull();
     expect(result.current.error).toBeNull();
+
+    await waitFor(() => {
+      expect(result.current.step).toBe('concepts');
+    });
   });
 
   it('should load session data successfully', async () => {
