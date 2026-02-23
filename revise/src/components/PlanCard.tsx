@@ -14,7 +14,7 @@ export function PlanCard({ plan, todayCompleted, daysCompleted }: PlanCardProps)
     (plan.testDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  const progressPercent = (daysCompleted / plan.totalDays) * 100;
+  const progressPercent = Math.min((daysCompleted / plan.totalDays) * 100, 100);
 
   const handleStart = () => {
     // Will navigate to today's study session
@@ -27,7 +27,9 @@ export function PlanCard({ plan, todayCompleted, daysCompleted }: PlanCardProps)
         <div>
           <h3 className="text-xl font-bold text-gray-900">{plan.subject}</h3>
           <p className="text-sm text-gray-500">
-            {daysUntilTest} days until test
+            {daysUntilTest >= 0
+              ? `${daysUntilTest} days until test`
+              : `Test was ${Math.abs(daysUntilTest)} days ago`}
           </p>
         </div>
         <div className="text-right">

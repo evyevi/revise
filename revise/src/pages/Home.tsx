@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { StudyDashboard } from '../components/StudyDashboard';
 import { PlanCard } from '../components/PlanCard';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { db, getUserStats } from '../lib/db';
 import type { StudyPlan } from '../types';
 
@@ -15,63 +17,109 @@ export function Home() {
   });
   const [dayProgress, setDayProgress] = useState<Map<string, number>>(new Map());
   const [todayCompleted, setTodayCompleted] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadData = async () => {
-    // Load user stats
-    const userStats = await getUserStats();
-    setStats({
-      xp: userStats.totalXP,
-      streak: userStats.currentStreak,
-      totalPlans: 0, // Will be calculated from completed plans
-      activePlans: 0,
-    });
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    // Load all study plans
-    const allPlans = await db.studyPlans.toArray();
-    setPlans(allPlans);
+      // Load user stats
+      const userStats = await getUserStats();
+      setStats({
+        xp: userStats.totalXP,
+        streak: userStats.currentStreak,
+        totalPlans: 0, // Will be calculated from completed plans
+        activePlans: 0,
+      });
 
-    // Calculate progress for each plan
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      // Load all study plans
+      const allPlans = await db.studyPlans.toArray();
+      setPlans(allPlans);
 
-    const progressMap = new Map<string, number>();
-    const completedTodaySet = new Set<string>();
-    let completedPlansCount = 0;
+      // Fix N+1 query: Fetch all study days once
+      const allDays = await db.studyDays.toArray();
+      const daysByPlan = new Map<string, typeof allDays>();
+      allDays.forEach(day => {
+        if (!daysByPlan.has(day.planId)) {
+          daysByPlan.set(day.planId, []);
+        }
+        daysByPlan.get(day.planId)!.push(day);
+      });
 
-    for (const plan of allPlans) {
-      const days = await db.studyDays.where('planId').equals(plan.id).toArray();
-      const completedCount = days.filter((d) => d.completed).length;
-      progressMap.set(plan.id, completedCount);
+      // Calculate progress for each plan
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      // Check if plan is fully completed (all study days done)
-      if (completedCount === plan.totalDays) {
-        completedPlansCount++;
+      const progressMap = new Map<string, number>();
+      const completedTodaySet = new Set<string>();
+      let completedPlansCount = 0;
+
+      for (const plan of allPlans) {
+        const days = daysByPlan.get(plan.id) || [];
+        const completedCount = days.filter((d) => d.completed).length;
+        progressMap.set(plan.id, completedCount);
+
+        // Check if plan is fully completed (all study days done)
+        if (completedCount === plan.totalDays) {
+          completedPlansCount++;
+        }
+
+        // Check if today's session is completed
+        const todaySession = days.find(
+          (d) => d.date.toDateString() === today.toDateString()
+        );
+        if (todaySession?.completed) {
+          completedTodaySet.add(plan.id);
+        }
       }
 
-      // Check if today's session is completed
-      const todaySession = days.find(
-        (d) => d.date.toDateString() === today.toDateString()
-      );
-      if (todaySession?.completed) {
-        completedTodaySet.add(plan.id);
-      }
+      setDayProgress(progressMap);
+      setTodayCompleted(completedTodaySet);
+
+      // Update active plans count and completed plans count
+      setStats((prev) => ({
+        ...prev,
+        activePlans: allPlans.length,
+        totalPlans: completedPlansCount,
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      setIsLoading(false);
     }
-
-    setDayProgress(progressMap);
-    setTodayCompleted(completedTodaySet);
-
-    // Update active plans count and completed plans count
-    setStats((prev) => ({
-      ...prev,
-      activePlans: allPlans.length,
-      totalPlans: completedPlansCount,
-    }));
-  };
+  }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
-  }, []);
+  }, [loadData]);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <LoadingSpinner />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="p-6 text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={() => loadData()}
+            className="bg-primary-500 text-white py-2 px-4 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   if (plans.length === 0) {
     return (
@@ -83,12 +131,12 @@ export function Home() {
           <p className="text-gray-600 mb-8">
             Create your first study plan to get started!
           </p>
-          <a
-            href="/create-plan"
+          <Link
+            to="/create-plan"
             className="inline-block bg-primary-500 text-white py-3 px-6 rounded-xl font-semibold active:scale-95 transition-transform"
           >
             + Create New Plan
-          </a>
+          </Link>
         </div>
       </Layout>
     );
@@ -126,12 +174,12 @@ export function Home() {
         </div>
 
         {/* Create new plan button */}
-        <a
-          href="/create-plan"
+        <Link
+          to="/create-plan"
           className="block w-full bg-white border-2 border-dashed border-primary-300 text-primary-600 py-3 px-4 rounded-xl font-semibold text-center hover:bg-primary-50 transition-colors"
         >
           + Add New Plan
-        </a>
+        </Link>
       </div>
     </Layout>
   );
