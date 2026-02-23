@@ -6,7 +6,6 @@ import { CreatePlan } from '../CreatePlan';
 import { BrowserRouter } from 'react-router-dom';
 import { useCreatePlan } from '../../hooks/useCreatePlan';
 import { useFileUpload } from '../../hooks/useFileUpload';
-import * as textExtraction from '../../lib/textExtraction';
 
 // Mock text extraction
 vi.mock('../../lib/textExtraction', () => ({
