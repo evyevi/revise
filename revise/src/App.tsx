@@ -11,7 +11,7 @@ function App(): JSX.Element {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create-plan" element={<CreatePlan />} />
-        <Route path="/study/:planId/:dayId" element={<StudySession />} />
+        <Route path="/study/:planId" element={<StudySession />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
