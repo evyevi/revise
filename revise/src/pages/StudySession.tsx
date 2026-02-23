@@ -103,7 +103,7 @@ export function StudySession() {
                 const correctXP = (correct / quizCount) * 50;
                 const totalXP = Math.round(baseXP + correctXP);
 
-                session.completeSession(totalXP);
+                session.completeSession(totalXP, session.studyDay?.id || '');
               }
             }}
             onPrev={session.prevQuiz}
@@ -115,10 +115,8 @@ export function StudySession() {
             xpEarned={session.xpEarned}
             quizScore={
               session.quizzes.length > 0
-                ? (Array.from(session.quizAnswers.values()).filter(
-                    (_, idx) =>
-                      session.quizzes[idx]?.correctAnswerIndex ===
-                      session.quizAnswers.get(session.quizzes[idx]?.id || '')
+                ? (session.quizzes.filter((quiz) =>
+                    session.quizAnswers.get(quiz.id) === quiz.correctAnswerIndex
                   ).length / session.quizzes.length) * 100
                 : 0
             }
