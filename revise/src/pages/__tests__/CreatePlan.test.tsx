@@ -30,11 +30,15 @@ const mockUseCreatePlanReturn = {
   setExtractedText: vi.fn(),
   setTestDate: vi.fn(),
   setMinutesPerDay: vi.fn(),
+  setRecommendedMinutesPerDay: vi.fn(),
   nextStep: vi.fn(),
   prevStep: vi.fn(),
+  goToStep: vi.fn(),
   generatePlan: vi.fn(),
   regeneratePlan: vi.fn(),
   savePlan: vi.fn(),
+  reset: vi.fn(),
+  clearError: vi.fn(),
 };
 
 vi.mock('../../hooks/useCreatePlan', () => ({
