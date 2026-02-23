@@ -44,7 +44,7 @@ describe('useCreatePlan', () => {
 
   it('exposes derived daysAvailable when testDate is set', () => {
     const { result } = renderHook(() => useCreatePlan());
-    const testDate = new Date('2026-02-24T00:00:00Z');
+    const testDate = new Date('2026-02-25T00:00:00Z');
 
     act(() => {
       result.current.setTestDate(testDate);
@@ -76,7 +76,7 @@ describe('useCreatePlan', () => {
 
     act(() => {
       result.current.setExtractedText('content');
-      result.current.setTestDate(new Date('2026-02-24T00:00:00Z'));
+      result.current.setTestDate(new Date('2026-02-25T00:00:00Z'));
     });
 
     vi.mocked(generateStudyPlan).mockResolvedValueOnce({
@@ -103,7 +103,7 @@ describe('useCreatePlan', () => {
 
     act(() => {
       result.current.setExtractedText('content');
-      result.current.setTestDate(new Date('2026-02-24T00:00:00Z'));
+      result.current.setTestDate(new Date('2026-02-25T00:00:00Z'));
       result.current.setMinutesPerDay(45);
     });
 
