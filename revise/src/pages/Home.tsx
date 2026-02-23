@@ -41,11 +41,13 @@ export function Home() {
       // Fix N+1 query: Fetch all study days once
       const allDays = await db.studyDays.toArray();
       const daysByPlan = new Map<string, typeof allDays>();
-      allDays.forEach(day => {
-        if (!daysByPlan.has(day.planId)) {
-          daysByPlan.set(day.planId, []);
+      allDays.forEach((day) => {
+        let planDays = daysByPlan.get(day.planId);
+        if (!planDays) {
+          planDays = [];
+          daysByPlan.set(day.planId, planDays);
         }
-        daysByPlan.get(day.planId)!.push(day);
+        planDays.push(day);
       });
 
       // Calculate progress for each plan
@@ -92,7 +94,7 @@ export function Home() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [loadData]);
 
   if (isLoading) {
@@ -111,7 +113,7 @@ export function Home() {
         <div className="p-6 text-center">
           <p className="text-red-600 mb-4">Error: {error}</p>
           <button
-            onClick={() => loadData()}
+            onClick={() => void loadData()}
             className="bg-primary-500 text-white py-2 px-4 rounded-lg"
           >
             Retry

@@ -44,6 +44,30 @@ interface PlanResponse {
   recommendedMinutesPerDay: number;
 }
 
+const isPlanResponse = (value: unknown): value is PlanResponse => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    Array.isArray(record.topics) &&
+    Array.isArray(record.schedule) &&
+    Array.isArray(record.flashcards) &&
+    Array.isArray(record.quizQuestions) &&
+    typeof record.recommendedMinutesPerDay === 'number'
+  );
+};
+
+const parsePlanResponse = (text: string): PlanResponse => {
+  const parsed = JSON.parse(text) as unknown;
+  if (!isPlanResponse(parsed)) {
+    throw new Error('AI response did not contain required fields');
+  }
+  return parsed;
+};
+
 /**
  * Generate study plan using Gemini AI
  * POST /api/generate-plan
@@ -177,15 +201,15 @@ Requirements:
 IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
     // Parse JSON - improved error handling
     let planData: PlanResponse;
-    
+
     try {
       // Try direct parse first
-      planData = JSON.parse(text);
+      planData = parsePlanResponse(text);
     } catch {
       // Fallback: extract JSON from potential markdown blocks
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -194,7 +218,7 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
       }
 
       try {
-        planData = JSON.parse(jsonMatch[0]);
+        planData = parsePlanResponse(jsonMatch[0]);
       } catch (parseError) {
         throw new Error(`Invalid JSON structure: ${parseError instanceof Error ? parseError.message : 'parse error'}`);
       }

@@ -148,8 +148,15 @@ export function useStudySession(planId: string) {
 
       // Separate new and review topics
       const topicsMap = new Map(plan.topics.map((t) => [t.id, t]));
-      const newTopics = studyDay.newTopicIds.map((id) => topicsMap.get(id)!);
-      const reviewTopics = studyDay.reviewTopicIds.map((id) => topicsMap.get(id)!);
+      const getTopicById = (id: string) => {
+        const topic = topicsMap.get(id);
+        if (!topic) {
+          throw new Error('Study topic not found');
+        }
+        return topic;
+      };
+      const newTopics = studyDay.newTopicIds.map(getTopicById);
+      const reviewTopics = studyDay.reviewTopicIds.map(getTopicById);
 
       // Get cards and quizzes for all topics for today
       const allTopicIds = [...studyDay.newTopicIds, ...studyDay.reviewTopicIds];
@@ -175,7 +182,7 @@ export function useStudySession(planId: string) {
   }, [planId]);
 
   useEffect(() => {
-    initializeSession();
+    void initializeSession();
   }, [initializeSession]);
 
   const advanceStep = useCallback(() => {

@@ -32,8 +32,8 @@ export function CreatePlan() {
     isSaving,
   } = useCreatePlan();
 
-  const handleFilesSelected = useCallback(async (newFiles: File[]) => {
-    await addFiles(newFiles);
+  const handleFilesSelected = useCallback((newFiles: File[]) => {
+    void addFiles(newFiles);
   }, [addFiles]);
 
   const completedFilesCount = files.filter((f) => f.status === 'completed').length;
@@ -136,7 +136,7 @@ export function CreatePlan() {
                 <button
                   type="button"
                   disabled={isGenerating}
-                  onClick={generatePlan}
+                  onClick={() => void generatePlan()}
                   className="w-full bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:active:scale-100"
                 >
                   {isGenerating ? 'Generating...' : 'Generate Plan'}
@@ -210,7 +210,7 @@ export function CreatePlan() {
               <button
                 type="button"
                 disabled={isGenerating}
-                onClick={generatePlan}
+                onClick={() => void generatePlan()}
                 className="w-full mb-3 border-2 border-primary-500 text-primary-600 py-3 px-4 rounded-lg font-semibold active:scale-95 transition-all hover:bg-primary-50 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 {isGenerating ? 'Regenerating...' : 'Regenerate Plan'}
@@ -261,14 +261,15 @@ export function CreatePlan() {
 
             <button
               type="button"
-              onClick={async () => {
-                try {
-                  await savePlan(files);
-                  // Brief delay for user acknowledgment
-                  setTimeout(() => navigate('/'), 500);
-                } catch {
-                  // Error already in hook state, will display
-                }
+              onClick={() => {
+                void savePlan(files)
+                  .then(() => {
+                    // Brief delay for user acknowledgment
+                    setTimeout(() => navigate('/'), 500);
+                  })
+                  .catch(() => {
+                    // Error already in hook state, will display
+                  });
               }}
               disabled={isSaving}
               aria-busy={isSaving}

@@ -49,7 +49,28 @@ export async function generateStudyPlan(
   request: GeneratePlanRequest,
   onRetry?: (attempt: number) => void
 ): Promise<PlanResponse> {
-  const endpoint = import.meta.env.VITE_API_ENDPOINT || '/api/generate-plan';
+  const endpoint =
+    (import.meta.env.VITE_API_ENDPOINT as string | undefined) ?? '/api/generate-plan';
+
+  const parseErrorMessage = (data: unknown): string | null => {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+
+    const record = data as Record<string, unknown>;
+    const details = record.details;
+    const error = record.error;
+
+    if (typeof details === 'string') {
+      return details;
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    return null;
+  };
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -68,14 +89,19 @@ export async function generateStudyPlan(
 
         if (!response.ok) {
           try {
-            const error = await response.json();
-            throw new Error(error.details || error.error || 'Failed to generate study plan');
+            const errorData = (await response.json()) as unknown;
+            const errorMessage = parseErrorMessage(errorData);
+            if (errorMessage) {
+              throw new Error(errorMessage);
+            }
+            throw new Error(`HTTP ${response.status}: Failed to generate study plan`);
           } catch {
             throw new Error(`HTTP ${response.status}: Failed to generate study plan`);
           }
         }
 
-        return response.json();
+        const data = (await response.json()) as unknown;
+        return data as PlanResponse;
       } finally {
         clearTimeout(timeoutId);
       }
