@@ -226,7 +226,7 @@ export function useStudySession(planId: string) {
       }
 
       dispatch({ type: 'COMPLETE_SESSION', payload: xp });
-    } catch (error) {
+    } catch {
       dispatch({
         type: 'INIT_ERROR',
         payload: 'Failed to save progress. Please try again.',

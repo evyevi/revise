@@ -138,11 +138,8 @@ describe('useFileUpload', () => {
   }, 15000);
 
   it('tracks progress for files with progress callback', async () => {
-    let progressCallback: ((progress: number) => void) | undefined;
-    
     vi.mocked(textExtraction.extractTextFromFile).mockImplementation(
       async (file, onProgress) => {
-        progressCallback = onProgress;
         if (onProgress) {
           onProgress(50);
           await new Promise(resolve => setTimeout(resolve, 10));
