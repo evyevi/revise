@@ -202,10 +202,18 @@ export function useStudySession(planId: string) {
     dispatch({ type: 'PREV_QUIZ' });
   }, []);
 
-  const completeSession = useCallback(async (xp: number) => {
-    if (state.studyDay) {
+  const completeSession = useCallback(async (xp: number, studyDayId: string) => {
+    if (!studyDayId) {
+      dispatch({
+        type: 'INIT_ERROR',
+        payload: 'No study day found. Please try again.',
+      });
+      return;
+    }
+
+    try {
       // Mark day as complete
-      await db.studyDays.update(state.studyDay.id, {
+      await db.studyDays.update(studyDayId, {
         completed: true,
       });
 
@@ -216,10 +224,15 @@ export function useStudySession(planId: string) {
           totalXP: stats.totalXP + xp,
         });
       }
-    }
 
-    dispatch({ type: 'COMPLETE_SESSION', payload: xp });
-  }, [state.studyDay]);
+      dispatch({ type: 'COMPLETE_SESSION', payload: xp });
+    } catch (error) {
+      dispatch({
+        type: 'INIT_ERROR',
+        payload: 'Failed to save progress. Please try again.',
+      });
+    }
+  }, []);
 
   return {
     ...state,

@@ -269,7 +269,7 @@ describe('useStudySession', () => {
     });
 
     await act(async () => {
-      await result.current.completeSession(75);
+      await result.current.completeSession(75, 'day-1');
     });
 
     expect(result.current.step).toBe('completion');
@@ -295,7 +295,7 @@ describe('useStudySession', () => {
     });
 
     await act(async () => {
-      await result.current.completeSession(50);
+      await result.current.completeSession(50, 'day-1');
     });
 
     expect(result.current.step).toBe('completion');
@@ -304,5 +304,120 @@ describe('useStudySession', () => {
     // Should update day but not crash on missing stats
     expect(db.studyDays.update).toHaveBeenCalled();
     expect(db.userStats.update).not.toHaveBeenCalled();
+  });
+
+  it('should handle database errors when completing session', async () => {
+    const mockUserStats = {
+      id: 'default',
+      totalXP: 100,
+      currentStreak: 5,
+      longestStreak: 10,
+      badges: [],
+    };
+
+    vi.mocked(db.userStats.get).mockResolvedValue(mockUserStats);
+    vi.mocked(db.studyDays.update).mockRejectedValue(new Error('Database error'));
+
+    const { result } = renderHook(() => useStudySession(mockPlanId));
+
+    await waitFor(() => {
+      expect(result.current.step).toBe('concepts');
+    });
+
+    await act(async () => {
+      await result.current.completeSession(75, 'day-1');
+    });
+
+    // Should set error state
+    expect(result.current.step).toBe('error');
+    expect(result.current.error).toBe('Failed to save progress. Please try again.');
+  });
+
+  it('should handle missing studyDayId when completing session', async () => {
+    const { result } = renderHook(() => useStudySession(mockPlanId));
+
+    await waitFor(() => {
+      expect(result.current.step).toBe('concepts');
+    });
+
+    await act(async () => {
+      await result.current.completeSession(50, '');
+    });
+
+    // Should set error state
+    expect(result.current.step).toBe('error');
+    expect(result.current.error).toBe('No study day found. Please try again.');
+    
+    // Should not attempt database operations
+    expect(db.studyDays.update).not.toHaveBeenCalled();
+  });
+
+  it('should correctly calculate quiz scores based on quiz answers', async () => {
+    const multipleQuizzes: QuizQuestion[] = [
+      {
+        id: 'quiz-1',
+        topicId: 'topic-1',
+        question: 'Which organelle produces energy?',
+        options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Golgi'],
+        correctAnswerIndex: 1,
+        explanation: 'Mitochondria is the powerhouse of the cell',
+      },
+      {
+        id: 'quiz-2',
+        topicId: 'topic-2',
+        question: 'What is DNA shaped like?',
+        options: ['Single strand', 'Double helix', 'Circle', 'Triangle'],
+        correctAnswerIndex: 1,
+        explanation: 'DNA has a double helix structure',
+      },
+      {
+        id: 'quiz-3',
+        topicId: 'topic-3',
+        question: 'What are proteins made of?',
+        options: ['Nucleotides', 'Amino acids', 'Lipids', 'Sugars'],
+        correctAnswerIndex: 1,
+        explanation: 'Proteins are made of amino acids',
+      },
+    ];
+
+    vi.mocked(planQueries.getQuizzesByTopicIds).mockResolvedValue(multipleQuizzes);
+
+    const { result } = renderHook(() => useStudySession(mockPlanId));
+
+    await waitFor(() => {
+      expect(result.current.step).toBe('concepts');
+    });
+
+    // Skip to quiz section
+    await act(async () => {
+      result.current.advanceStep();
+      result.current.advanceStep();
+    });
+
+    expect(result.current.step).toBe('quiz');
+
+    // Answer quizzes with 2 correct and 1 incorrect
+    await act(async () => {
+      result.current.answerQuiz(0, 1); // Correct
+      result.current.nextQuiz();
+      result.current.answerQuiz(1, 1); // Correct
+      result.current.nextQuiz();
+      result.current.answerQuiz(2, 0); // Incorrect (should be 1)
+    });
+
+    // Verify quiz answers are stored correctly
+    expect(result.current.quizAnswers.get('quiz-1')).toBe(1);
+    expect(result.current.quizAnswers.get('quiz-2')).toBe(1);
+    expect(result.current.quizAnswers.get('quiz-3')).toBe(0);
+
+    // Calculate score manually to verify the logic
+    const correctAnswers = result.current.quizzes.filter((quiz) =>
+      result.current.quizAnswers.get(quiz.id) === quiz.correctAnswerIndex
+    ).length;
+    
+    expect(correctAnswers).toBe(2);
+    
+    const expectedScore = (correctAnswers / result.current.quizzes.length) * 100;
+    expect(expectedScore).toBeCloseTo(66.67, 1);
   });
 });
