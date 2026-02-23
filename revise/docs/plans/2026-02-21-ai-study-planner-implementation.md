@@ -1593,16 +1593,1407 @@ git commit -m "feat: implement complete study plan creation flow"
 
 ---
 
+---
+
+## Phase 4: Home Dashboard & Study Session UI
+
+### Overview
+
+Phase 4 builds the core study experience: a dashboard showing active plans and a multi-step daily study session flow with concepts, flashcards, quizzes, and completion celebration.
+
+**Components to build:**
+- Home dashboard with plan cards and daily stats
+- Study session manager with multi-step flow
+- Concept summary view
+- Flashcard deck with swipe interactions
+- Quiz screen with instant feedback
+- Session completion celebration screen
+
+---
+
+### Task 9: Home Dashboard UI
+
+**Files:**
+- Create: `src/components/PlanCard.tsx`
+- Create: `src/components/StudyDashboard.tsx`
+- Modify: `src/pages/Home.tsx`
+
+**Step 1: Create PlanCard component**
+
+Create `src/components/PlanCard.tsx`:
+
+```typescript
+import { useNavigate } from 'react-router-dom';
+import type { StudyPlan } from '../types';
+
+interface PlanCardProps {
+  plan: StudyPlan;
+  todayCompleted: boolean;
+  daysCompleted: number;
+}
+
+export function PlanCard({ plan, todayCompleted, daysCompleted }: PlanCardProps) {
+  const navigate = useNavigate();
+  
+  const daysUntilTest = Math.ceil(
+    (plan.testDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  const progressPercent = (daysCompleted / plan.totalDays) * 100;
+
+  const handleStart = () => {
+    // Will navigate to today's study session
+    navigate(`/study/${plan.id}`);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md p-6 mb-4">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-xl font-bold text-gray-900">{plan.subject}</h3>
+          <p className="text-sm text-gray-500">
+            {daysUntilTest} days until test
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-primary-500">
+            {daysCompleted}/{plan.totalDays}
+          </p>
+          <p className="text-xs text-gray-500">days</p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
+        <div
+          className="bg-gradient-to-r from-primary-400 to-primary-600 h-full transition-all"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+
+      {/* Day info */}
+      <p className="text-sm text-gray-600 mb-4">
+        Day {daysCompleted + 1} of {plan.totalDays}
+      </p>
+
+      {/* Start button */}
+      <button
+        onClick={handleStart}
+        disabled={todayCompleted}
+        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all ${
+          todayCompleted
+            ? 'bg-gray-100 text-gray-500 cursor-default'
+            : 'bg-primary-500 text-white active:scale-95'
+        }`}
+      >
+        {todayCompleted ? '✓ Completed Today' : "🎯 Start Today's Study"}
+      </button>
+    </div>
+  );
+}
+```
+
+**Step 2: Create StudyDashboard stats component**
+
+Create `src/components/StudyDashboard.tsx`:
+
+```typescript
+interface StudyDashboardProps {
+  xp: number;
+  streak: number;
+  totalPlans: number;
+  activePlans: number;
+}
+
+export function StudyDashboard({
+  xp,
+  streak,
+  totalPlans,
+  activePlans,
+}: StudyDashboardProps) {
+  return (
+    <div className="grid grid-cols-2 gap-3 mb-6">
+      {/* XP */}
+      <div className="bg-gradient-to-br from-primary-100 to-primary-50 rounded-xl p-4">
+        <p className="text-xs text-gray-600 mb-1">Total XP</p>
+        <p className="text-2xl font-bold text-primary-600">♥ {xp}</p>
+      </div>
+
+      {/* Streak */}
+      <div className="bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl p-4">
+        <p className="text-xs text-gray-600 mb-1">Streak</p>
+        <p className="text-2xl font-bold text-orange-600">🔥 {streak}</p>
+      </div>
+
+      {/* Active Plans */}
+      <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl p-4">
+        <p className="text-xs text-gray-600 mb-1">Active Plans</p>
+        <p className="text-2xl font-bold text-blue-600">{activePlans}</p>
+      </div>
+
+      {/* Total Completed */}
+      <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl p-4">
+        <p className="text-xs text-gray-600 mb-1">Completed</p>
+        <p className="text-2xl font-bold text-green-600">{totalPlans}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+**Step 3: Update Home page with dashboard**
+
+Update `src/pages/Home.tsx`:
+
+```typescript
+import { useEffect, useState } from 'react';
+import { Layout } from '../components/Layout';
+import { StudyDashboard } from '../components/StudyDashboard';
+import { PlanCard } from '../components/PlanCard';
+import { db, getUserStats } from '../lib/db';
+import type { StudyPlan, StudyDay } from '../types';
+
+export function Home() {
+  const [plans, setPlans] = useState<StudyPlan[]>([]);
+  const [stats, setStats] = useState({
+    xp: 0,
+    streak: 0,
+    totalPlans: 0,
+    activePlans: 0,
+  });
+  const [dayProgress, setDayProgress] = useState<Map<string, number>>(new Map());
+  const [todayCompleted, setTodayCompleted] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    // Load user stats
+    const userStats = await getUserStats();
+    setStats({
+      xp: userStats.totalXP,
+      streak: userStats.currentStreak,
+      totalPlans: 0, // Will calculate from completed plans
+      activePlans: 0,
+    });
+
+    // Load all study plans
+    const allPlans = await db.studyPlans.toArray();
+    setPlans(allPlans);
+
+    // Calculate progress for each plan
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const progressMap = new Map<string, number>();
+    const completedTodaySet = new Set<string>();
+
+    for (const plan of allPlans) {
+      const days = await db.studyDays.where('planId').equals(plan.id).toArray();
+      const completedCount = days.filter((d) => d.completed).length;
+      progressMap.set(plan.id, completedCount);
+
+      // Check if today's session is completed
+      const todaySession = days.find(
+        (d) => d.date.toDateString() === today.toDateString()
+      );
+      if (todaySession?.completed) {
+        completedTodaySet.add(plan.id);
+      }
+    }
+
+    setDayProgress(progressMap);
+    setTodayCompleted(completedTodaySet);
+
+    // Update active plans count
+    setStats((prev) => ({
+      ...prev,
+      activePlans: allPlans.length,
+    }));
+  };
+
+  if (plans.length === 0) {
+    return (
+      <Layout>
+        <div className="p-6 text-center">
+          <h1 className="text-3xl font-bold text-primary-500 mb-4">
+            Study Planner ✨
+          </h1>
+          <p className="text-gray-600 mb-8">
+            Create your first study plan to get started!
+          </p>
+          <a
+            href="/create-plan"
+            className="inline-block bg-primary-500 text-white py-3 px-6 rounded-xl font-semibold active:scale-95 transition-transform"
+          >
+            + Create New Plan
+          </a>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="p-6 max-w-lg mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Welcome back! 👋
+          </h1>
+          <p className="text-gray-600 text-sm">
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        </div>
+
+        <StudyDashboard {...stats} />
+
+        {/* Plans section */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Active Plans</h2>
+          {plans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              daysCompleted={dayProgress.get(plan.id) || 0}
+              todayCompleted={todayCompleted.has(plan.id)}
+            />
+          ))}
+        </div>
+
+        {/* Create new plan button */}
+        <a
+          href="/create-plan"
+          className="block w-full bg-white border-2 border-dashed border-primary-300 text-primary-600 py-3 px-4 rounded-xl font-semibold text-center hover:bg-primary-50 transition-colors"
+        >
+          + Add New Plan
+        </a>
+      </div>
+    </Layout>
+  );
+}
+```
+
+**Step 4: Create hooks for plan queries**
+
+Create `src/lib/planQueries.ts`:
+
+```typescript
+import { db } from './db';
+import type { StudyDay } from '../types';
+
+export async function getTodayStudyDay(planId: string): Promise<StudyDay | undefined> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const days = await db.studyDays
+    .where('planId')
+    .equals(planId)
+    .toArray();
+
+  return days.find(
+    (d) => d.date.toDateString() === today.toDateString()
+  );
+}
+
+export async function getStudyDayById(dayId: string): Promise<StudyDay | undefined> {
+  return db.studyDays.get(dayId);
+}
+
+export async function getPlanWithTopics(planId: string) {
+  const plan = await db.studyPlans.get(planId);
+  if (!plan) return null;
+
+  const days = await db.studyDays.where('planId').equals(planId).toArray();
+  
+  return { plan, days };
+}
+
+export async function getCardsByTopicIds(topicIds: string[]) {
+  const cards = await db.flashcards
+    .where('topicId')
+    .anyOf(topicIds)
+    .toArray();
+  
+  return cards;
+}
+
+export async function getQuizzesByTopicIds(topicIds: string[]) {
+  const quizzes = await db.quizQuestions
+    .where('topicId')
+    .anyOf(topicIds)
+    .toArray();
+  
+  return quizzes;
+}
+```
+
+**Step 5: Test home dashboard**
+
+```bash
+npm run dev
+```
+
+Expected:
+- Home page shows stats cards
+- Plan cards display correctly
+- Progress bars show
+- Navigation to create plan works
+
+**Step 6: Commit**
+
+```bash
+git add .
+git commit -m "feat: add home dashboard with plan cards and stats display"
+```
+
+---
+
+### Task 10: Study Session Manager & Multi-Step Flow
+
+**Files:**
+- Create: `src/hooks/useStudySession.ts`
+- Create: `src/pages/StudySession.tsx` (complete implementation)
+- Create: `src/components/StudySessionFlow.tsx`
+
+**Step 1: Create useStudySession hook for state management**
+
+Create `src/hooks/useStudySession.ts`:
+
+```typescript
+import { useReducer, useCallback, useEffect } from 'react';
+import { db } from '../lib/db';
+import {
+  getTodayStudyDay,
+  getCardsByTopicIds,
+  getQuizzesByTopicIds,
+} from '../lib/planQueries';
+import type { StudyDay, Flashcard, QuizQuestion } from '../types';
+
+export interface SessionState {
+  step: 'concepts' | 'flashcards' | 'quiz' | 'completion' | 'loading' | 'error';
+  studyDay: StudyDay | null;
+  newTopics: Array<{ id: string; name: string; keyPoints: string[] }>;
+  reviewTopics: Array<{ id: string; name: string; keyPoints: string[] }>;
+  flashcards: Flashcard[];
+  quizzes: QuizQuestion[];
+  currentFlashcardIndex: number;
+  currentQuizIndex: number;
+  quizAnswers: Map<string, number>; // quiz id -> answer index
+  xpEarned: number;
+  error: string | null;
+}
+
+type SessionAction =
+  | { type: 'INIT_SUCCESS'; payload: { studyDay: StudyDay; newTopics: any[]; reviewTopics: any[]; flashcards: Flashcard[]; quizzes: QuizQuestion[] } }
+  | { type: 'INIT_ERROR'; payload: string }
+  | { type: 'ADVANCE_STEP' }
+  | { type: 'PREV_STEP' }
+  | { type: 'NEXT_FLASHCARD' }
+  | { type: 'PREV_FLASHCARD' }
+  | { type: 'ANSWER_QUIZ'; payload: { quizIndex: number; answerIndex: number } }
+  | { type: 'NEXT_QUIZ' }
+  | { type: 'PREV_QUIZ' }
+  | { type: 'COMPLETE_SESSION'; payload: number };
+
+function getInitialState(): SessionState {
+  return {
+    step: 'loading',
+    studyDay: null,
+    newTopics: [],
+    reviewTopics: [],
+    flashcards: [],
+    quizzes: [],
+    currentFlashcardIndex: 0,
+    currentQuizIndex: 0,
+    quizAnswers: new Map(),
+    xpEarned: 0,
+    error: null,
+  };
+}
+
+function sessionReducer(state: SessionState, action: SessionAction): SessionState {
+  switch (action.type) {
+    case 'INIT_SUCCESS':
+      return {
+        ...state,
+        step: 'concepts',
+        studyDay: action.payload.studyDay,
+        newTopics: action.payload.newTopics,
+        reviewTopics: action.payload.reviewTopics,
+        flashcards: action.payload.flashcards,
+        quizzes: action.payload.quizzes,
+      };
+    
+    case 'INIT_ERROR':
+      return {
+        ...state,
+        step: 'error',
+        error: action.payload,
+      };
+    
+    case 'ADVANCE_STEP': {
+      const steps: SessionState['step'][] = ['concepts', 'flashcards', 'quiz', 'completion'];
+      const currentIndex = steps.indexOf(state.step);
+      if (currentIndex < steps.length - 1) {
+        return { ...state, step: steps[currentIndex + 1] };
+      }
+      return state;
+    }
+    
+    case 'NEXT_FLASHCARD':
+      return {
+        ...state,
+        currentFlashcardIndex: Math.min(
+          state.currentFlashcardIndex + 1,
+          state.flashcards.length - 1
+        ),
+      };
+    
+    case 'PREV_FLASHCARD':
+      return {
+        ...state,
+        currentFlashcardIndex: Math.max(state.currentFlashcardIndex - 1, 0),
+      };
+    
+    case 'ANSWER_QUIZ':
+      const newAnswers = new Map(state.quizAnswers);
+      const quizId = state.quizzes[action.payload.quizIndex]?.id;
+      if (quizId) {
+        newAnswers.set(quizId, action.payload.answerIndex);
+      }
+      return { ...state, quizAnswers: newAnswers };
+    
+    case 'NEXT_QUIZ':
+      return {
+        ...state,
+        currentQuizIndex: Math.min(
+          state.currentQuizIndex + 1,
+          state.quizzes.length - 1
+        ),
+      };
+    
+    case 'PREV_QUIZ':
+      return {
+        ...state,
+        currentQuizIndex: Math.max(state.currentQuizIndex - 1, 0),
+      };
+    
+    case 'COMPLETE_SESSION':
+      return {
+        ...state,
+        step: 'completion',
+        xpEarned: action.payload,
+      };
+    
+    default:
+      return state;
+  }
+}
+
+export function useStudySession(planId: string) {
+  const [state, dispatch] = useReducer(sessionReducer, getInitialState());
+
+  useEffect(() => {
+    initializeSession();
+  }, [planId]);
+
+  const initializeSession = async () => {
+    try {
+      // Get today's study day
+      const studyDay = await getTodayStudyDay(planId);
+      if (!studyDay) {
+        throw new Error('No study session for today');
+      }
+
+      // Get plan to access topics
+      const plan = await db.studyPlans.get(planId);
+      if (!plan) {
+        throw new Error('Study plan not found');
+      }
+
+      // Separate new and review topics
+      const topicsMap = new Map(plan.topics.map((t) => [t.id, t]));
+      const newTopics = studyDay.newTopicIds.map((id) => topicsMap.get(id)!);
+      const reviewTopics = studyDay.reviewTopicIds.map((id) => topicsMap.get(id)!);
+
+      // Get cards and quizzes for all topics for today
+      const allTopicIds = [...studyDay.newTopicIds, ...studyDay.reviewTopicIds];
+      const flashcards = await getCardsByTopicIds(allTopicIds);
+      const quizzes = await getQuizzesByTopicIds(allTopicIds);
+
+      dispatch({
+        type: 'INIT_SUCCESS',
+        payload: {
+          studyDay,
+          newTopics,
+          reviewTopics,
+          flashcards,
+          quizzes,
+        },
+      });
+    } catch (error) {
+      dispatch({
+        type: 'INIT_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to load session',
+      });
+    }
+  };
+
+  const advanceStep = useCallback(() => {
+    dispatch({ type: 'ADVANCE_STEP' });
+  }, []);
+
+  const nextFlashcard = useCallback(() => {
+    dispatch({ type: 'NEXT_FLASHCARD' });
+  }, []);
+
+  const prevFlashcard = useCallback(() => {
+    dispatch({ type: 'PREV_FLASHCARD' });
+  }, []);
+
+  const answerQuiz = useCallback((quizIndex: number, answerIndex: number) => {
+    dispatch({ type: 'ANSWER_QUIZ', payload: { quizIndex, answerIndex } });
+  }, []);
+
+  const nextQuiz = useCallback(() => {
+    dispatch({ type: 'NEXT_QUIZ' });
+  }, []);
+
+  const prevQuiz = useCallback(() => {
+    dispatch({ type: 'PREV_QUIZ' });
+  }, []);
+
+  const completeSession = useCallback(async (xp: number) => {
+    if (state.studyDay) {
+      // Mark day as complete
+      await db.studyDays.update(state.studyDay.id, {
+        completed: true,
+      });
+
+      // Add XP to user stats
+      const stats = await db.userStats.get('default');
+      if (stats) {
+        await db.userStats.update('default', {
+          totalXP: stats.totalXP + xp,
+        });
+      }
+    }
+
+    dispatch({ type: 'COMPLETE_SESSION', payload: xp });
+  }, [state.studyDay]);
+
+  return {
+    ...state,
+    advanceStep,
+    nextFlashcard,
+    prevFlashcard,
+    answerQuiz,
+    nextQuiz,
+    prevQuiz,
+    completeSession,
+  };
+}
+```
+
+**Step 2: Create minimal StudySession page**
+
+Update `src/pages/StudySession.tsx`:
+
+```typescript
+import { useParams, useNavigate } from 'react-router-dom';
+import { Layout } from '../components/Layout';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { useStudySession } from '../hooks/useStudySession';
+import { ConceptSummary } from '../components/study-session/ConceptSummary';
+import { FlashcardDeck } from '../components/study-session/FlashcardDeck';
+import { QuizScreen } from '../components/study-session/QuizScreen';
+import { CompletionScreen } from '../components/study-session/CompletionScreen';
+
+export function StudySession() {
+  const { planId } = useParams<{ planId: string }>();
+  const navigate = useNavigate();
+  const session = useStudySession(planId || '');
+
+  if (!planId) {
+    return (
+      <Layout showBottomNav={false}>
+        <div className="p-6 text-center">
+          <p className="text-red-600">Invalid study plan</p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 bg-primary-500 text-white py-2 px-4 rounded-lg"
+          >
+            Back to Home
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (session.step === 'loading') {
+    return (
+      <Layout showBottomNav={false}>
+        <LoadingSpinner message="Loading your study session..." />
+      </Layout>
+    );
+  }
+
+  if (session.step === 'error') {
+    return (
+      <Layout showBottomNav={false}>
+        <div className="p-6 text-center">
+          <p className="text-red-600 mb-4">{session.error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-primary-500 text-white py-2 px-4 rounded-lg"
+          >
+            Back to Home
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout showBottomNav={false}>
+      <div className="max-w-lg mx-auto">
+        {session.step === 'concepts' && (
+          <ConceptSummary
+            newTopics={session.newTopics}
+            reviewTopics={session.reviewTopics}
+            onNext={session.advanceStep}
+            onBack={() => navigate('/')}
+          />
+        )}
+
+        {session.step === 'flashcards' && (
+          <FlashcardDeck
+            cards={session.flashcards}
+            currentIndex={session.currentFlashcardIndex}
+            onNext={() => {
+              if (session.currentFlashcardIndex < session.flashcards.length - 1) {
+                session.nextFlashcard();
+              } else {
+                session.advanceStep();
+              }
+            }}
+            onPrev={session.prevFlashcard}
+            onSkip={session.advanceStep}
+          />
+        )}
+
+        {session.step === 'quiz' && (
+          <QuizScreen
+            quizzes={session.quizzes}
+            currentIndex={session.currentQuizIndex}
+            answers={session.quizAnswers}
+            onAnswer={session.answerQuiz}
+            onNext={() => {
+              if (session.currentQuizIndex < session.quizzes.length - 1) {
+                session.nextQuiz();
+              } else {
+                // Calculate XP and complete session
+                const correct = Array.from(session.quizAnswers.entries()).filter(
+                  ([quizId, answerIndex]) => {
+                    const quiz = session.quizzes.find((q) => q.id === quizId);
+                    return quiz && quiz.correctAnswerIndex === answerIndex;
+                  }
+                ).length;
+
+                const quizCount = session.quizzes.length;
+                const baseXP = 50;
+                const correctXP = (correct / quizCount) * 50;
+                const totalXP = Math.round(baseXP + correctXP);
+
+                session.completeSession(totalXP);
+              }
+            }}
+            onPrev={session.prevQuiz}
+          />
+        )}
+
+        {session.step === 'completion' && (
+          <CompletionScreen
+            xpEarned={session.xpEarned}
+            quizScore={
+              session.quizzes.length > 0
+                ? (Array.from(session.quizAnswers.values()).filter(
+                    (_, idx) =>
+                      session.quizzes[idx]?.correctAnswerIndex ===
+                      session.quizAnswers.get(session.quizzes[idx]?.id || '')
+                  ).length / session.quizzes.length) * 100
+                : 0
+            }
+            onHome={() => navigate('/')}
+          />
+        )}
+      </div>
+    </Layout>
+  );
+}
+```
+
+**Step 3: Test study session initialization**
+
+```bash
+npm run dev
+```
+
+Expected:
+- Navigate to study session from plan card
+- Loading spinner shows
+- Session initializes without errors
+
+**Step 4: Commit**
+
+```bash
+git add .
+git commit -m "feat: add study session manager with multi-step flow state"
+```
+
+---
+
+### Task 11: Study Session Components Part 1 (Concepts & Flashcards)
+
+**Files:**
+- Create: `src/components/study-session/ConceptSummary.tsx`
+- Create: `src/components/study-session/FlashcardDeck.tsx`
+
+**Step 1: Create ConceptSummary component**
+
+Create `src/components/study-session/ConceptSummary.tsx`:
+
+```typescript
+interface Topic {
+  id: string;
+  name: string;
+  keyPoints: string[];
+}
+
+interface ConceptSummaryProps {
+  newTopics: Topic[];
+  reviewTopics: Topic[];
+  onNext: () => void;
+  onBack: () => void;
+}
+
+export function ConceptSummary({
+  newTopics,
+  reviewTopics,
+  onNext,
+  onBack,
+}: ConceptSummaryProps) {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Today's Concepts</h1>
+        <p className="text-gray-600 text-sm">
+          Review what you'll be learning today
+        </p>
+      </div>
+
+      {/* New Topics */}
+      {newTopics.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-primary-600 mb-4 flex items-center">
+            <span className="text-2xl mr-2">🌟</span>
+            New Topics ({newTopics.length})
+          </h2>
+          <div className="space-y-3">
+            {newTopics.map((topic) => (
+              <div
+                key={topic.id}
+                className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-4 border-l-4 border-primary-500"
+              >
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {topic.name}
+                </h3>
+                <ul className="space-y-1">
+                  {topic.keyPoints.map((point, idx) => (
+                    <li key={idx} className="text-sm text-gray-700 flex">
+                      <span className="mr-2">•</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Review Topics */}
+      {reviewTopics.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-blue-600 mb-4 flex items-center">
+            <span className="text-2xl mr-2">🔄</span>
+            Review Topics ({reviewTopics.length})
+          </h2>
+          <div className="space-y-3">
+            {reviewTopics.map((topic) => (
+              <div
+                key={topic.id}
+                className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-l-4 border-blue-500"
+              >
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {topic.name}
+                </h3>
+                <ul className="space-y-1">
+                  {topic.keyPoints.map((point, idx) => (
+                    <li key={idx} className="text-sm text-gray-700 flex">
+                      <span className="mr-2">•</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="flex gap-3 mt-8 fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white to-transparent">
+        <button
+          onClick={onBack}
+          className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold active:scale-95 transition-transform"
+        >
+          Back
+        </button>
+        <button
+          onClick={onNext}
+          className="flex-1 bg-primary-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform"
+        >
+          Start Flashcards
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Step 2: Create FlashcardDeck component with swipe**
+
+Create `src/components/study-session/FlashcardDeck.tsx`:
+
+```typescript
+import { useState } from 'react';
+import type { Flashcard } from '../../types';
+
+interface FlashcardDeckProps {
+  cards: Flashcard[];
+  currentIndex: number;
+  onNext: () => void;
+  onPrev: () => void;
+  onSkip: () => void;
+}
+
+export function FlashcardDeck({
+  cards,
+  currentIndex,
+  onNext,
+  onPrev,
+  onSkip,
+}: FlashcardDeckProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const card = cards[currentIndex];
+
+  if (cards.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-600 mb-4">No flashcards for today</p>
+        <button
+          onClick={onSkip}
+          className="bg-primary-500 text-white py-3 px-6 rounded-lg font-semibold"
+        >
+          Skip to Quiz
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 flex flex-col h-screen">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Flashcards</h1>
+        <p className="text-gray-600 text-sm">
+          {currentIndex + 1} of {cards.length}
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-gray-200 rounded-full h-1 mb-8 overflow-hidden">
+        <div
+          className="bg-primary-500 h-full transition-all"
+          style={{
+            width: `${((currentIndex + 1) / cards.length) * 100}%`,
+          }}
+        />
+      </div>
+
+      {/* Card */}
+      <div
+        onClick={() => setIsFlipped(!isFlipped)}
+        className="flex-1 flex items-center justify-center mb-8 cursor-pointer"
+      >
+        <div
+          className={`w-full max-w-sm bg-gradient-to-br ${
+            isFlipped
+              ? 'from-blue-100 to-blue-50'
+              : 'from-primary-100 to-primary-50'
+          } rounded-3xl p-8 shadow-lg aspect-square flex flex-col items-center justify-center text-center transition-all transform hover:scale-105`}
+        >
+          <div className="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-wider">
+            {isFlipped ? '📝 Answer' : '❓ Question'}
+          </div>
+          <p
+            className={`${
+              isFlipped ? 'text-lg leading-relaxed' : 'text-2xl font-bold'
+            } text-gray-900`}
+          >
+            {isFlipped ? card.back : card.front}
+          </p>
+          <div className="text-xs text-gray-500 mt-8">Tap to flip</div>
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div className="space-y-3">
+        {/* Swipe indicators */}
+        <div className="flex justify-between text-xs text-gray-500 px-2">
+          <span>← Unsure</span>
+          <span>Sure →</span>
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onPrev}
+            disabled={currentIndex === 0}
+            className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
+          >
+            ← Previous
+          </button>
+          <button
+            onClick={onNext}
+            className="flex-1 bg-primary-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform"
+          >
+            {currentIndex === cards.length - 1 ? 'Done' : 'Next →'}
+          </button>
+        </div>
+
+        {/* Skip to quiz */}
+        <button
+          onClick={onSkip}
+          className="w-full text-primary-600 py-2 font-semibold text-sm"
+        >
+          Skip to Quiz
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Step 3: Test concepts and flashcard components**
+
+```bash
+npm run dev
+```
+
+Expected:
+- Concept summary displays topics correctly
+- Flashcard flips on click
+- Navigation works
+- Progress bar updates
+
+**Step 4: Commit**
+
+```bash
+git add .
+git commit -m "feat: add concept summary and flashcard deck components"
+```
+
+---
+
+### Task 12: Study Session Components Part 2 (Quiz & Completion)
+
+**Files:**
+- Create: `src/components/study-session/QuizScreen.tsx`
+- Create: `src/components/study-session/CompletionScreen.tsx`
+
+**Step 1: Create QuizScreen component**
+
+Create `src/components/study-session/QuizScreen.tsx`:
+
+```typescript
+import type { QuizQuestion } from '../../types';
+
+interface QuizScreenProps {
+  quizzes: QuizQuestion[];
+  currentIndex: number;
+  answers: Map<string, number>;
+  onAnswer: (quizIndex: number, answerIndex: number) => void;
+  onNext: () => void;
+  onPrev: () => void;
+}
+
+export function QuizScreen({
+  quizzes,
+  currentIndex,
+  answers,
+  onAnswer,
+  onNext,
+  onPrev,
+}: QuizScreenProps) {
+  const quiz = quizzes[currentIndex];
+  const selectedAnswer = answers.get(quiz.id);
+  const isCorrect = selectedAnswer === quiz.correctAnswerIndex;
+
+  if (quizzes.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-600 mb-4">No quizzes for today</p>
+        <button
+          onClick={onNext}
+          className="bg-primary-500 text-white py-3 px-6 rounded-lg font-semibold"
+        >
+          Complete Session
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Quiz</h1>
+        <p className="text-gray-600 text-sm">
+          {currentIndex + 1} of {quizzes.length}
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-gray-200 rounded-full h-1 mb-8 overflow-hidden">
+        <div
+          className="bg-blue-500 h-full transition-all"
+          style={{
+            width: `${((currentIndex + 1) / quizzes.length) * 100}%`,
+          }}
+        />
+      </div>
+
+      {/* Question */}
+      <div className="mb-8">
+        <p className="text-lg font-semibold text-gray-900 mb-6">
+          {quiz.question}
+        </p>
+
+        {/* Options */}
+        <div className="space-y-3">
+          {quiz.options.map((option, index) => {
+            const isSelected = selectedAnswer === index;
+            const isCorrectAnswer = index === quiz.correctAnswerIndex;
+
+            let buttonClass = 'bg-white border-2 border-gray-200';
+            if (selectedAnswer !== undefined) {
+              if (isCorrectAnswer) {
+                buttonClass = 'bg-green-50 border-2 border-green-500';
+              } else if (isSelected && !isCorrect) {
+                buttonClass = 'bg-red-50 border-2 border-red-500';
+              }
+            } else if (isSelected) {
+              buttonClass = 'bg-primary-50 border-2 border-primary-500';
+            }
+
+            return (
+              <button
+                key={index}
+                onClick={() => onAnswer(currentIndex, index)}
+                disabled={selectedAnswer !== undefined}
+                className={`w-full p-4 rounded-xl text-left font-medium transition-all ${buttonClass} disabled:opacity-80`}
+              >
+                <div className="flex items-center">
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
+                      isSelected
+                        ? 'bg-primary-500 border-primary-500'
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    {isSelected && (
+                      <span className="text-xs text-white font-bold">
+                        {index === quiz.correctAnswerIndex ? '✓' : '✗'}
+                      </span>
+                    )}
+                  </div>
+                  <span>{option}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Explanation */}
+        {selectedAnswer !== undefined && (
+          <div
+            className={`mt-6 p-4 rounded-xl ${
+              isCorrect
+                ? 'bg-green-50 border-l-4 border-green-500'
+                : 'bg-blue-50 border-l-4 border-blue-500'
+            }`}
+          >
+            <p className="text-sm font-semibold text-gray-900 mb-2">
+              {isCorrect ? '✓ Correct!' : '📚 Explanation'}
+            </p>
+            <p className="text-sm text-gray-700">{quiz.explanation}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      {selectedAnswer !== undefined && (
+        <div className="flex gap-3 mt-8 fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white to-transparent">
+          <button
+            onClick={onPrev}
+            disabled={currentIndex === 0}
+            className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold disabled:opacity-50 active:scale-95 transition-transform"
+          >
+            Back
+          </button>
+          <button
+            onClick={onNext}
+            className="flex-1 bg-primary-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform"
+          >
+            {currentIndex === quizzes.length - 1 ? 'See Results' : 'Next'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+**Step 2: Create CompletionScreen component**
+
+Create `src/components/study-session/CompletionScreen.tsx`:
+
+```typescript
+interface CompletionScreenProps {
+  xpEarned: number;
+  quizScore: number;
+  onHome: () => void;
+}
+
+export function CompletionScreen({
+  xpEarned,
+  quizScore,
+}: CompletionScreenProps) {
+  const scorePercentage = Math.round(quizScore);
+
+  let message = '';
+  let emoji = '';
+
+  if (scorePercentage >= 80) {
+    message = "Amazing! You're crushing it! 🎉";
+    emoji = '🎉';
+  } else if (scorePercentage >= 60) {
+    message = 'Good work! You\'re learning and improving! 💪';
+    emoji = '💪';
+  } else if (scorePercentage >= 40) {
+    message = 'Keep going! Every practice helps you learn! 🌟';
+    emoji = '🌟';
+  } else {
+    message =
+      "Don't worry! This content will come up again tomorrow. You've got this! 💖";
+    emoji = '💖';
+  }
+
+  return (
+    <div className="p-6 flex flex-col h-screen items-center justify-center text-center">
+      <div className="text-6xl mb-4">{emoji}</div>
+
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Day Complete!</h1>
+
+      <p className="text-gray-600 mb-8">{message}</p>
+
+      {/* Score */}
+      <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-8 mb-8 w-full">
+        <p className="text-sm text-gray-600 mb-2">Quiz Score</p>
+        <p className="text-4xl font-bold text-blue-600">
+          {scorePercentage.toFixed(0)}%
+        </p>
+      </div>
+
+      {/* XP */}
+      <div className="bg-gradient-to-br from-primary-100 to-primary-50 rounded-2xl p-8 mb-8 w-full">
+        <p className="text-sm text-gray-600 mb-2">XP Earned</p>
+        <p className="text-4xl font-bold text-primary-600">
+          ♥ +{xpEarned}
+        </p>
+      </div>
+
+      {/* Confetti animation placeholder */}
+      <div className="mb-8">
+        <p className="text-sm text-gray-500">✨ Excellent work today! ✨</p>
+      </div>
+
+      {/* Home button */}
+      <button
+        onClick={() => window.location.href = '/'}
+        className="w-full bg-primary-500 text-white py-4 px-6 rounded-xl font-bold text-lg active:scale-95 transition-transform mt-8"
+      >
+        Back to Home
+      </button>
+
+      <p className="text-sm text-gray-600 mt-4">See you tomorrow! 👋</p>
+    </div>
+  );
+}
+```
+
+**Step 3: Test quiz and completion screens**
+
+```bash
+npm run dev
+```
+
+Expected:
+- Quiz displays questions and options
+- Correct/incorrect feedback shows
+- Completion screen displays XP and score
+- Navigation works end-to-end
+
+**Step 4: Commit**
+
+```bash
+git add .
+git commit -m "feat: add quiz and completion screens for study sessions"
+```
+
+---
+
+### Task 13: Integration & Polish
+
+**Files:**
+- Modify: `src/components/MinutesInput.tsx` (create if missing)
+- Modify: `src/pages/CreatePlan.tsx` (update with minutes selection)
+- Add: `src/components/study-session/index.ts` (barrel exports)
+
+**Step 1: Create MinutesInput component**
+
+Create `src/components/MinutesInput.tsx`:
+
+```typescript
+interface MinutesInputProps {
+  value: number | null;
+  onChange: (minutes: number | null) => void;
+  recommended?: number;
+}
+
+export function MinutesInput({
+  value,
+  onChange,
+  recommended,
+}: MinutesInputProps) {
+  const presets = [15, 30, 45, 60];
+
+  return (
+    <div>
+      <label className="block text-lg font-semibold text-gray-900 mb-4">
+        Daily Study Time
+      </label>
+
+      {recommended && (
+        <p className="text-sm text-gray-600 mb-4">
+          AI recommends: <span className="font-semibold">{recommended} min/day</span>
+        </p>
+      )}
+
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {presets.map((preset) => (
+          <button
+            key={preset}
+            onClick={() => onChange(preset)}
+            className={`py-3 px-2 rounded-lg font-semibold transition-all ${
+              value === preset
+                ? 'bg-primary-500 text-white'
+                : 'bg-gray-100 text-gray-700 active:scale-95'
+            }`}
+          >
+            {preset}
+          </button>
+        ))}
+      </div>
+
+      <input
+        type="number"
+        min="5"
+        max="480"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
+        placeholder="Or enter custom time"
+        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:border-primary-500 focus:outline-none"
+      />
+    </div>
+  );
+}
+```
+
+**Step 2: Create study-session barrel exports**
+
+Create `src/components/study-session/index.ts`:
+
+```typescript
+export { ConceptSummary } from './ConceptSummary';
+export { FlashcardDeck } from './FlashcardDeck';
+export { QuizScreen } from './QuizScreen';
+export { CompletionScreen } from './CompletionScreen';
+```
+
+**Step 3: Update CreatePlan page with full flow**
+
+Update `src/pages/CreatePlan.tsx` to save minutes and files together, ensure all steps connect properly.
+
+**Step 4: Run full type check**
+
+```bash
+npm run build
+```
+
+Expected: No TypeScript errors
+
+**Step 5: Test end-to-end flow**
+
+```bash
+npm run dev
+```
+
+Expected:
+- Create plan flow works completely
+- Study session can be accessed
+- All screens render correctly
+- Navigation works throughout
+
+**Step 6: Commit full Phase 4**
+
+```bash
+git add .
+git commit -m "feat: complete Phase 4 home dashboard and study session UI"
+```
+
+---
+
 ## Next Steps
 
-This implementation plan continues with:
-- Phase 4: Home Dashboard & Study Session UI
-- Phase 5: Flashcards & Quiz Components  
-- Phase 6: Gamification System
-- Phase 7: Progress Tracking
-- Phase 8: Polish & Testing
-- Phase 9: Deployment
-
-Each phase follows the same granular task structure with 2-5 minute steps, exact file paths, code examples, test commands, and frequent commits.
-
-Total estimated implementation time: 4-6 weeks for full MVP.
+This completes Phase 4. The next phases are:
+- Phase 5: Flashcards & Quiz Components (advanced interactions)
+- Phase 6: Gamification System (badges, animations)
+- Phase 7: Progress Tracking (detailed stats)
+- Phase 8: Polish & Testing (refinements)
+- Phase 9: Deployment (Vercel setup)
