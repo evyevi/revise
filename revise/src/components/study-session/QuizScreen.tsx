@@ -17,10 +17,6 @@ export function QuizScreen({
   onNext,
   onPrev,
 }: QuizScreenProps) {
-  const quiz = quizzes[currentIndex];
-  const selectedAnswer = answers.get(quiz.id);
-  const isCorrect = selectedAnswer === quiz.correctAnswerIndex;
-
   if (quizzes.length === 0) {
     return (
       <div className="p-6 text-center">
@@ -35,8 +31,12 @@ export function QuizScreen({
     );
   }
 
+  const quiz = quizzes[currentIndex];
+  const selectedAnswer = answers.get(quiz.id);
+  const isCorrect = selectedAnswer === quiz.correctAnswerIndex;
+
   return (
-    <div className="p-6">
+    <div className="p-6 pb-32">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">Quiz</h1>
         <p className="text-gray-600 text-sm">

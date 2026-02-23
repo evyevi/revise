@@ -59,7 +59,7 @@ export function CompletionScreen({
 
       {/* Home button */}
       <button
-        onClick={() => window.location.href = '/'}
+        onClick={onHome}
         className="w-full bg-primary-500 text-white py-4 px-6 rounded-xl font-bold text-lg active:scale-95 transition-transform mt-8"
       >
         Back to Home
