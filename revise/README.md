@@ -54,13 +54,16 @@ The application will be available at `http://localhost:5173` by default.
 
 ### Environment Setup
 
-For AI features to work, ensure you have the required environment variables:
+For AI features (study plan generation) to work, you need the Gemini API key:
+
+1. Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Create `.env.local` in the project root:
 
 ```bash
-VITE_GOOGLE_AI_API_KEY=your_google_api_key
+GEMINI_API_KEY=your_api_key_here
 ```
 
-Add these to a `.env.local` file in the project root.
+**Note**: This is used by the backend API function (`api/generate-plan.ts`), not the frontend code.
 
 ## Testing
 
@@ -149,6 +152,12 @@ npx vercel
 Run the application through Vercel's local development server:
 
 ```bash
+# Option 1: Load environment from Vercel project (requires Vercel project link)
+vercel env pull
+vercel dev
+
+# Option 2: Pass environment variables directly from .env.local
+export GEMINI_API_KEY=$(grep GEMINI_API_KEY .env.local | cut -d '=' -f2)
 vercel dev
 ```
 
@@ -156,9 +165,14 @@ vercel dev
 - Starts a local server that mimics the Vercel production environment
 - Serves your React frontend from Vite
 - Runs serverless functions from the `api/` directory
-- Supports environment variables from `.env.local`
+- API functions have access to environment variables
 
 **Default URL**: `http://localhost:3000`
+
+**Important**: `vercel dev` does not automatically load `.env.local` for API functions. You must either:
+1. Use `vercel env pull` to sync environment from your Vercel project
+2. Manually export environment variables before running `vercel dev`
+3. Or use `npm run dev` instead (dev server only, no API functions locally)
 
 **Configuration**: Vercel settings are defined in `vercel.json`:
 - API functions in `api/` directory have a 30-second timeout
@@ -291,6 +305,44 @@ npx tsc --noEmit
 rm -rf dist
 npm run build
 ```
+
+### Study Plan Generation Not Working
+
+**Problem**: Getting "API key not configured" or study plan generation fails
+
+**Solutions**:
+
+1. **For `npm run preview`** (static build preview):
+   - Study plan generation will NOT work with `npm run preview`
+   - `npm run preview` only serves static files, no API functions
+   - Use `vercel dev` or `npm run dev + external API call` instead
+
+2. **For `vercel dev` (Vercel dev server)**:
+   - Ensure environment variables are loaded:
+   ```bash
+   # Option A: Pull from Vercel project
+   vercel env pull
+   vercel dev
+
+   # Option B: Export from .env.local
+   export GEMINI_API_KEY=$(grep GEMINI_API_KEY .env.local | cut -d '=' -f2)
+   vercel dev
+   ```
+
+3. **For `npm run dev` (Vite dev server)**:
+   - Vite dev server alone cannot run serverless API functions
+   - Study plan generation requires the backend API
+   - Deploy to Vercel or use a backend server alongside Vite dev
+
+4. **Check API endpoint is correct**:
+   - Verify `api/generate-plan.ts` endpoint is accessible
+   - Test API directly:
+   ```bash
+   curl -X POST http://localhost:3000/api/generate-plan \
+     -H "Content-Type: application/json" \
+     -d '{"content": "test", "daysAvailable": 5}'
+   ```
+   - Should return a study plan or descriptive error
 
 ## Environment Variables
 
