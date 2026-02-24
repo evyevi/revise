@@ -77,3 +77,18 @@ export interface UploadedFile {
   extractedText: string;
   fileBlob?: Blob;
 }
+
+export interface FlashcardResponse {
+  flashcardId: string;
+  correct: boolean;
+  responseTime: Date;
+}
+
+export interface QuizAttempt {
+  questionId: string;
+  selectedAnswer: number;
+  correct: boolean;
+  timeSpent?: number;
+}
+
+export type MasteryLevel = 0 | 1 | 2 | 3 | 4 | 5;
