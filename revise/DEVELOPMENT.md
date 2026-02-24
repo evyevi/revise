@@ -99,6 +99,27 @@ vercel env pull
 vercel dev
 ```
 
+### "Model not found" Error (404)
+**Symptom**: `models/gemini-X is not found for API version v1beta`
+
+**Solution**: The model name needs to match what's available for your API key.
+
+Current setting: `gemini-pro` (most compatible)
+
+If it still fails, try editing `api/generate-plan.ts` line 5:
+```typescript
+// Try these in order:
+const MODEL_NAME = 'gemini-pro';           // ✅ Most stable
+const MODEL_NAME = 'gemini-1.5-pro';       // Newer, if available
+const MODEL_NAME = 'gemini-1.5-flash';     // Faster, if available
+```
+
+**Debug which models are available**:
+```bash
+export GEMINI_API_KEY=$(grep GEMINI_API_KEY .env.local | cut -d '=' -f2)
+curl "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" | grep '"name"'
+```
+
 ### Plan generation not working with `npm run preview`
 - `npm run preview` is a static file server only
 - API functions don't run with preview
