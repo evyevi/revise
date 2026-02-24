@@ -291,26 +291,52 @@ export function CreatePlan() {
 
         {debugEnabled && (
           <div className="mt-6 p-4 bg-gray-100 rounded border border-gray-300">
-            <p className="font-bold">Debug</p>
-            <div className="mt-3 space-y-2 text-sm">
-              <div>Step: {step}</div>
-              <div>Can Proceed: {canProceed ? 'Yes' : 'No'}</div>
-              <div>Is Processing: {isProcessing ? 'Yes' : 'No'}</div>
-              <div>Completed Files: {completedFilesCount}</div>
-              <div>Extracted Text Length: {extractedText.length}</div>
-              
-              <div className="mt-3 border-t pt-2">
-                <p className="font-semibold">Files:</p>
+            <p className="font-bold">Debug Panel</p>
+            <div className="mt-3 space-y-2 text-sm font-mono">
+              {/* Hook State */}
+              <div className="bg-white p-2 rounded border border-gray-200">
+                <p className="font-semibold text-gray-700 mb-1">Wizard State:</p>
+                <div>Step: {step}</div>
+                <div>Can Proceed: {canProceed ? 'Yes' : 'No'}</div>
+                <div>Is Processing: {isProcessing ? 'Yes' : 'No'}</div>
+                <div>Completed Files: {completedFilesCount}</div>
+                <div>Total Extracted Text Length: {extractedText.length}</div>
+                {extractedText.length > 0 && (
+                  <div className="mt-1 p-1 bg-gray-50 rounded text-xs max-h-20 overflow-auto">
+                    <p className="text-gray-600 font-normal">First 200 chars:</p>
+                    <p className="text-gray-700">{extractedText.substring(0, 200)}{extractedText.length > 200 ? '...' : ''}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* File List */}
+              <div className="bg-white p-2 rounded border border-gray-200">
+                <p className="font-semibold text-gray-700 mb-1">Files ({files.length}):</p>
                 {files.length === 0 ? (
                   <p className="text-gray-500">No files</p>
                 ) : (
-                  <ul className="space-y-1">
+                  <ul className="space-y-2">
                     {files.map((file, idx) => (
-                      <li key={idx} className="text-xs">
-                        <div>{file.file.name}</div>
-                        <div className="text-gray-600">
-                          Status: {file.status} | Progress: {file.progress}% 
-                          {file.error && ` | Error: ${file.error}`}
+                      <li key={idx} className="text-xs bg-gray-50 p-1 rounded border border-gray-200">
+                        <div className="font-semibold text-gray-800">{file.file.name}</div>
+                        <div className="text-gray-600 space-y-0.5">
+                          <div>ID: {file.id}</div>
+                          <div>Size: {(file.file.size / 1024).toFixed(1)}KB</div>
+                          <div>Type: {file.file.type || 'unknown'}</div>
+                          <div>Status: {file.status}</div>
+                          <div>Progress: {file.progress ?? 'N/A'}%</div>
+                          {file.extractedText !== undefined && (
+                            <div>Extracted Text: {file.extractedText.length} chars</div>
+                          )}
+                          {file.extractedText && file.extractedText.length > 0 && (
+                            <div className="mt-1 p-1 bg-white rounded max-h-16 overflow-auto">
+                              <span className="text-gray-600">Preview: </span>
+                              <span className="text-gray-700">{file.extractedText.substring(0, 100)}{file.extractedText.length > 100 ? '...' : ''}</span>
+                            </div>
+                          )}
+                          {file.error && (
+                            <div className="text-red-600">Error: {file.error}</div>
+                          )}
                         </div>
                       </li>
                     ))}
