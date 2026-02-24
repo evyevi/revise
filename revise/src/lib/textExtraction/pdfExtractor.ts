@@ -29,11 +29,23 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
+      
+      // Extract text from items - each item can be text or other content
       const pageText = textContent.items
-        .map((item) => ('str' in item && typeof item.str === 'string' ? item.str : ''))
-        .filter((value) => value.length > 0)
-        .join(' ');
-      textParts.push(pageText);
+        .map((item) => {
+          // Check if item has 'str' property (text content)
+          if (item && typeof item === 'object' && 'str' in item) {
+            const str = (item as { str: string }).str;
+            return typeof str === 'string' ? str : '';
+          }
+          return '';
+        })
+        .join('');
+      
+      // Only add non-empty pages
+      if (pageText.trim().length > 0) {
+        textParts.push(pageText);
+      }
     }
     
     return textParts.join(PAGE_SEPARATOR);
