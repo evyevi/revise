@@ -35,7 +35,7 @@ export interface Flashcard {
   back: string;
   firstShownDate?: Date;
   reviewDates: Date[];
-  masteryLevel: number;
+  masteryLevel: MasteryLevel;
   needsPractice?: boolean;
 }
 
@@ -81,14 +81,22 @@ export interface UploadedFile {
 export interface FlashcardResponse {
   flashcardId: string;
   correct: boolean;
-  responseTime: Date;
+  respondedAt: Date;
 }
 
 export interface QuizAttempt {
   questionId: string;
   selectedAnswer: number;
   correct: boolean;
+  /** Duration in milliseconds */
   timeSpent?: number;
 }
 
+/**
+ * Mastery level scale (0-5):
+ * 0 = new (never reviewed)
+ * 1-2 = learning (needs practice)
+ * 3-4 = familiar (mostly understood)
+ * 5 = mastered (fluent)
+ */
 export type MasteryLevel = 0 | 1 | 2 | 3 | 4 | 5;
