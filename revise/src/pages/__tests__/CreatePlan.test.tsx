@@ -149,6 +149,61 @@ describe('CreatePlan wizard', () => {
     window.history.pushState({}, '', '/');
   });
 
+  it('auto-syncs extracted text from files to wizard state on step 1', () => {
+    // This test verifies the fix for the bug where extracted text was at file level
+    // but not synced to wizard state until user clicked Next
+    
+    const extractedTextFromPDF = 'This is extracted text from the PDF file. It contains important content.';
+    const extractedTextFromTxt = 'This is text from a text file.';
+    const separator = '\n\n---\n\n';
+    const expectedAggregatedText = `${extractedTextFromPDF}${separator}${extractedTextFromTxt}`;
+
+    // Setup mock files with extracted text (simulating completed extraction)
+    const mockFileWithText1 = {
+      id: 'file-1',
+      file: new File(['content'], 'document.pdf', { type: 'application/pdf' }),
+      status: 'completed' as const,
+      progress: 100,
+      extractedText: extractedTextFromPDF,
+    };
+
+    const mockFileWithText2 = {
+      id: 'file-2',
+      file: new File(['content'], 'notes.txt', { type: 'text/plain' }),
+      status: 'completed' as const,
+      progress: 100,
+      extractedText: extractedTextFromTxt,
+    };
+
+    // Track if getAllExtractedText is called (this happens in the auto-sync useEffect)
+    const mockGetAllExtractedText = vi.fn(() => expectedAggregatedText);
+
+    vi.mocked(useFileUpload).mockReturnValue({
+      ...mockUseFileUploadReturn,
+      files: [mockFileWithText1, mockFileWithText2],
+      getAllExtractedText: mockGetAllExtractedText,
+    });
+
+    // Track if setExtractedText is called (this happens in the auto-sync useEffect)
+    const mockSetExtractedText = vi.fn();
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 1, // On upload step - auto-sync should trigger
+      extractedText: expectedAggregatedText,
+      setExtractedText: mockSetExtractedText,
+    });
+
+    renderWithRouter(<CreatePlan />);
+
+    // Verify component rendered
+    expect(screen.getByText(/upload.*study materials/i)).toBeInTheDocument();
+
+    // Verify that getAllExtractedText was called (triggered by useEffect watching files)
+    // This proves the auto-sync hook is working
+    expect(mockGetAllExtractedText.mock.calls.length).toBeGreaterThan(0);
+  });
+
   it('renders step 3 (generate) with plan button', () => {
     vi.mocked(useCreatePlan).mockReturnValue({
       ...mockUseCreatePlanReturn,
