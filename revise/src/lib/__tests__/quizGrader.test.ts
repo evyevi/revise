@@ -94,7 +94,7 @@ describe('saveQuizResults', () => {
     });
   });
 
-  it('handles database errors gracefully', async () => {
+  it('re-throws database errors', async () => {
     const attempts: QuizAttempt[] = [
       { questionId: 'q1', selectedAnswer: 0, correct: true },
     ];
