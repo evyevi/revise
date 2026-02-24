@@ -10,7 +10,7 @@ vi.mock('../../lib/textExtraction', () => ({
 
 describe('useFileUpload', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('initializes with empty files array', () => {

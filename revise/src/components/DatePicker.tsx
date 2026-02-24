@@ -19,7 +19,7 @@ export function DatePicker({
   disabled = false,
   error,
 }: DatePickerProps) {
-  const formatDate = (date: Date | null): string => {
+  const formatDate = (date: Date | null | undefined): string => {
     if (!date) return '';
     return date.toISOString().split('T')[0];
   };

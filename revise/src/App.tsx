@@ -5,7 +5,7 @@ import { StudySession } from './pages/StudySession';
 import { Progress } from './pages/Progress';
 import { NotFound } from './pages/NotFound';
 
-function App(): JSX.Element {
+function App() {
   return (
     <BrowserRouter>
       <Routes>

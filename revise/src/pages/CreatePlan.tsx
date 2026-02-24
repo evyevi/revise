@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
 import { FilePreview } from '../components/FilePreview';
@@ -39,7 +39,7 @@ export function CreatePlan() {
   const completedFilesCount = files.filter((f) => f.status === 'completed').length;
   const hasError = files.some((f) => f.status === 'error');
   const isProcessing = files.some((f) => f.status === 'pending' || f.status === 'processing');
-  const debugEnabled = new URLSearchParams(window.location.search).has('debug');
+  const debugEnabled = new URLSearchParams(useLocation().search).has('debug');
 
   const handleNext = useCallback(() => {
     if (step === 1) {
