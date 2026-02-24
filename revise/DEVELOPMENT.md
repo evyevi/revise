@@ -104,14 +104,14 @@ vercel dev
 
 **Solution**: The model name needs to match what's available for your API key.
 
-Current setting: `gemini-pro` (most compatible)
+Current setting: `gemini-2.5-flash` (fast, current)
 
 If it still fails, try editing `api/generate-plan.ts` line 5:
 ```typescript
 // Try these in order:
-const MODEL_NAME = 'gemini-pro';           // ✅ Most stable
-const MODEL_NAME = 'gemini-1.5-pro';       // Newer, if available
-const MODEL_NAME = 'gemini-1.5-flash';     // Faster, if available
+const MODEL_NAME = 'gemini-2.5-flash';     // ✅ Fast, current
+const MODEL_NAME = 'gemini-2.0-flash';     // Stable fallback
+const MODEL_NAME = 'gemini-pro';           // Widest compatibility
 ```
 
 **Debug which models are available**:
