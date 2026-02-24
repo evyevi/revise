@@ -84,6 +84,7 @@ describe('CreatePlan wizard', () => {
       file: new File(['content1'], 'document.pdf', { type: 'application/pdf' }),
       status: 'completed' as const,
       progress: 100,
+      extractedText: 'This is extracted text from document.pdf',
     };
 
     const mockFile2 = {
@@ -91,6 +92,7 @@ describe('CreatePlan wizard', () => {
       file: new File(['content2'], 'notes.txt', { type: 'text/plain' }),
       status: 'processing' as const,
       progress: 50,
+      extractedText: 'Notes content',
     };
 
     const mockFile3 = {
@@ -118,34 +120,31 @@ describe('CreatePlan wizard', () => {
     renderWithRouter(<CreatePlan />);
 
     // Check for debug panel header
-    const debugPanel = screen.getByText('Debug');
+    const debugPanel = screen.getByText('Debug Panel');
     expect(debugPanel).toBeInTheDocument();
     
-    // Get the debug panel container
-    const debugContainer = debugPanel.closest('.bg-gray-100');
-    expect(debugContainer).toBeInTheDocument();
-
-    // State values - check within debug panel
+    // Check wizard state section
     expect(screen.getByText(/Step:\s*1/)).toBeInTheDocument();
     expect(screen.getByText(/Can Proceed:/)).toBeInTheDocument();
     expect(screen.getByText(/Is Processing:/)).toBeInTheDocument();
     expect(screen.getByText(/Completed Files:/)).toBeInTheDocument();
-    expect(screen.getByText(/Extracted Text Length:/)).toBeInTheDocument();
+    expect(screen.getByText(/Total Extracted Text Length:/)).toBeInTheDocument();
 
-    // Check for file list - use getAllByText to get debug panel entries
+    // Check file list with detailed info
+    expect(screen.getByText(/Files \(3\)/)).toBeInTheDocument();
+    
+    // Check file details - use getAllByText for duplicates
     const allDocPdfElements = screen.getAllByText('document.pdf');
     expect(allDocPdfElements.length).toBeGreaterThan(0);
     
-    const allNotesTxtElements = screen.getAllByText('notes.txt');
-    expect(allNotesTxtElements.length).toBeGreaterThan(0);
-    
-    const allImagePngElements = screen.getAllByText('image.png');
-    expect(allImagePngElements.length).toBeGreaterThan(0);
+    // Check file metadata appears
+    expect(screen.getByText(/Status: completed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Status: processing/i)).toBeInTheDocument();
+    expect(screen.getByText(/Status: error/i)).toBeInTheDocument();
 
-    // Check that file statuses appear
-    expect(screen.getByText(/Status:\s*completed/i)).toBeInTheDocument();
-    expect(screen.getByText(/Status:\s*processing/i)).toBeInTheDocument();
-    expect(screen.getByText(/Status:\s*error/i)).toBeInTheDocument();
+    // Check file sizes appear (file size calculation) - use getAllByText since there are multiple files
+    const allSizeElements = screen.getAllByText(/Size:.*KB/);
+    expect(allSizeElements.length).toBeGreaterThan(0);
 
     window.history.pushState({}, '', '/');
   });
