@@ -307,7 +307,7 @@ export function CreatePlan() {
                   <ul className="space-y-1">
                     {files.map((file, idx) => (
                       <li key={idx} className="text-xs">
-                        <div>{file.name}</div>
+                        <div>{file.file.name}</div>
                         <div className="text-gray-600">
                           Status: {file.status} | Progress: {file.progress}% 
                           {file.error && ` | Error: ${file.error}`}
