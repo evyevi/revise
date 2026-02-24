@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Constants
-const MODEL_NAME = 'gemini-1.5-flash-001';
+const MODEL_NAME = 'gemini-pro';
 const MAX_CONTENT_LENGTH = 15000;
 const DAYS_MIN = 1;
 const DAYS_MAX = 365;
