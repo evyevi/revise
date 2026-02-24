@@ -78,9 +78,68 @@ describe('CreatePlan wizard', () => {
   it('shows debug panel when debug flag is set', () => {
     window.history.pushState({}, '', '/create-plan?debug=1');
 
+    // Setup mock state with some files
+    const mockFile1 = {
+      id: 'file-1',
+      file: new File(['content1'], 'document.pdf', { type: 'application/pdf' }),
+      status: 'completed' as const,
+      progress: 100,
+    };
+
+    const mockFile2 = {
+      id: 'file-2',
+      file: new File(['content2'], 'notes.txt', { type: 'text/plain' }),
+      status: 'processing' as const,
+      progress: 50,
+    };
+
+    const mockFile3 = {
+      id: 'file-3',
+      file: new File(['content3'], 'image.png', { type: 'image/png' }),
+      status: 'error' as const,
+      progress: 0,
+      error: 'Unsupported file type',
+    };
+
+    vi.mocked(useFileUpload).mockReturnValue({
+      ...mockUseFileUploadReturn,
+      files: [mockFile1, mockFile2, mockFile3],
+      getAllExtractedText: vi.fn(() => 'Extracted text content with some text'),
+    });
+
+    vi.mocked(useCreatePlan).mockReturnValue({
+      ...mockUseCreatePlanReturn,
+      step: 1,
+      extractedText: 'Extracted text content with some text',
+      canProceed: true,
+      isProcessing: true,
+    });
+
     renderWithRouter(<CreatePlan />);
 
+    // Check for debug panel header
     expect(screen.getByText('Debug')).toBeInTheDocument();
+
+    // State values
+    expect(screen.getByText(/Step:/)).toBeInTheDocument();
+    expect(screen.getByText(/Can Proceed:/)).toBeInTheDocument();
+    expect(screen.getByText(/Is Processing:/)).toBeInTheDocument();
+    expect(screen.getByText(/Completed Files:/)).toBeInTheDocument();
+    expect(screen.getByText(/Extracted Text Length:/)).toBeInTheDocument();
+
+    // Check for file list
+    expect(screen.getByText('document.pdf')).toBeInTheDocument();
+    expect(screen.getByText(/Status:\s*completed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Progress:\s*100%/i)).toBeInTheDocument();
+
+    expect(screen.getByText('notes.txt')).toBeInTheDocument();
+    expect(screen.getByText(/Status:\s*processing/i)).toBeInTheDocument();
+    expect(screen.getByText(/Progress:\s*50%/i)).toBeInTheDocument();
+
+    expect(screen.getByText('image.png')).toBeInTheDocument();
+    expect(screen.getByText(/Status:\s*error/i)).toBeInTheDocument();
+    expect(screen.getByText('Unsupported file type')).toBeInTheDocument();
+
     window.history.pushState({}, '', '/');
   });
 

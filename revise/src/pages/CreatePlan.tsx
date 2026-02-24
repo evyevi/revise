@@ -22,6 +22,7 @@ export function CreatePlan() {
     error,
     isGenerating,
     canProceed,
+    extractedText,
     setExtractedText,
     setTestDate,
     setMinutesPerDay,
@@ -289,8 +290,34 @@ export function CreatePlan() {
         )}
 
         {debugEnabled && (
-          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h2 className="text-sm font-semibold text-gray-700">Debug</h2>
+          <div className="mt-6 p-4 bg-gray-100 rounded border border-gray-300">
+            <p className="font-bold">Debug</p>
+            <div className="mt-3 space-y-2 text-sm">
+              <div>Step: {step}</div>
+              <div>Can Proceed: {canProceed ? 'Yes' : 'No'}</div>
+              <div>Is Processing: {isProcessing ? 'Yes' : 'No'}</div>
+              <div>Completed Files: {completedFilesCount}</div>
+              <div>Extracted Text Length: {extractedText.length}</div>
+              
+              <div className="mt-3 border-t pt-2">
+                <p className="font-semibold">Files:</p>
+                {files.length === 0 ? (
+                  <p className="text-gray-500">No files</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {files.map((file, idx) => (
+                      <li key={idx} className="text-xs">
+                        <div>{file.name}</div>
+                        <div className="text-gray-600">
+                          Status: {file.status} | Progress: {file.progress}% 
+                          {file.error && ` | Error: ${file.error}`}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
