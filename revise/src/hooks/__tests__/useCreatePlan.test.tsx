@@ -30,6 +30,12 @@ vi.mock('../../lib/db', () => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-02-23T00:00:00Z'));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('useCreatePlan', () => {

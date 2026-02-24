@@ -62,7 +62,7 @@ describe('CreatePlan wizard', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('renders step 1 (upload) initially', () => {

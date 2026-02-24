@@ -1,4 +1,4 @@
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/display/api';
 
 type PdfDocumentLoadingTask = { promise: Promise<PDFDocumentProxy> };
@@ -10,8 +10,11 @@ type PdfJsLib = {
 
 const pdfjs = pdfjsLib as unknown as PdfJsLib;
 
-// Configure legacy worker from CDN
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/legacy/build/pdf.worker.min.js`;
+// Use bundled worker to avoid CDN import issues in dev/prod
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const PAGE_SEPARATOR = '\n\n'; // Double newline separates pages for readability
 
