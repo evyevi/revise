@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
@@ -50,6 +50,14 @@ export function CreatePlan() {
     }
     nextStep();
   }, [step, getAllExtractedText, setExtractedText, nextStep]);
+
+  // Auto-sync extracted text whenever files complete extraction
+  useEffect(() => {
+    if (step === 1) {
+      const text = getAllExtractedText();
+      setExtractedText(text);
+    }
+  }, [files, step, getAllExtractedText, setExtractedText]);
 
   return (
     <Layout showBottomNav={false}>
