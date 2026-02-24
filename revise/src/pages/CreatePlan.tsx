@@ -39,6 +39,7 @@ export function CreatePlan() {
   const completedFilesCount = files.filter((f) => f.status === 'completed').length;
   const hasError = files.some((f) => f.status === 'error');
   const isProcessing = files.some((f) => f.status === 'pending' || f.status === 'processing');
+  const debugEnabled = new URLSearchParams(window.location.search).has('debug');
 
   const handleNext = useCallback(() => {
     if (step === 1) {
@@ -262,7 +263,7 @@ export function CreatePlan() {
             <button
               type="button"
               onClick={() => {
-                void savePlan(files)
+                void savePlan(files.map((fileInfo) => fileInfo.file))
                   .then(() => {
                     // Brief delay for user acknowledgment
                     setTimeout(() => navigate('/'), 500);
@@ -285,6 +286,12 @@ export function CreatePlan() {
               )}
             </button>
           </>
+        )}
+
+        {debugEnabled && (
+          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <h2 className="text-sm font-semibold text-gray-700">Debug</h2>
+          </div>
         )}
 
         {/* Navigation Buttons */}

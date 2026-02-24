@@ -75,6 +75,15 @@ describe('CreatePlan wizard', () => {
     expect(screen.queryByText(/back/i)).not.toBeInTheDocument();
   });
 
+  it('shows debug panel when debug flag is set', () => {
+    window.history.pushState({}, '', '/create-plan?debug=1');
+
+    renderWithRouter(<CreatePlan />);
+
+    expect(screen.getByText('Debug')).toBeInTheDocument();
+    window.history.pushState({}, '', '/');
+  });
+
   it('renders step 3 (generate) with plan button', () => {
     vi.mocked(useCreatePlan).mockReturnValue({
       ...mockUseCreatePlanReturn,
