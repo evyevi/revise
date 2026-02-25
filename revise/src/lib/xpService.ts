@@ -16,10 +16,14 @@ export function calculateSessionXP(): number {
 
 /**
  * Calculate XP based on correct quiz answers
- * @param correctCount - Number of correct answers
+ * @param correctCount - Number of correct answers (must be between 0 and 999)
  * @returns 10 XP per correct answer
+ * @throws Error if correctCount is less than 0 or greater than 999
  */
 export function calculateQuizAnswerXP(correctCount: number): number {
+  if (correctCount < 0 || correctCount > 999) {
+    throw new Error(`Invalid correctCount: ${correctCount}. Must be between 0 and 999.`);
+  }
   return correctCount * 10;
 }
 
@@ -43,10 +47,14 @@ export function calculatePerfectQuizBonus(isPerfect: boolean): number {
 /**
  * Calculate streak bonus XP based on consecutive study days
  * Rewards 20 XP per 3-day milestone (3, 6, 9, etc.)
- * @param streak - Current study streak in days
+ * @param streak - Current study streak in days (must be >= 0)
  * @returns XP based on completed milestones
+ * @throws Error if streak is less than 0
  */
 export function calculateStreakBonus(streak: number): number {
+  if (streak < 0) {
+    throw new Error(`Invalid streak: ${streak}. Must be greater than or equal to 0.`);
+  }
   return Math.floor(streak / 3) * 20;
 }
 
