@@ -243,20 +243,14 @@ export function useStudySession(planId: string) {
   }, []);
 
   const completeSession = useCallback(async () => {
-    if (!state.studyDay) {
-      dispatch({
-        type: 'INIT_ERROR',
-        payload: 'No study day found. Please try again.',
-      });
-      return;
-    }
+    if (!state.studyDay) return;
 
     try {
       // Calculate XP: (quiz score / 10) + (cards reviewed * 2)
       const quizScore = calculateQuizScore(state.quizAttempts);
       const xpEarned = Math.floor(quizScore / 10) + (state.flashcardsReviewed * 2);
 
-      // Save quiz results
+      // Save quiz results - CRITICAL, must not fail silently
       await saveQuizResults(
         state.studyDay.planId,
         state.studyDay.id,
@@ -265,25 +259,35 @@ export function useStudySession(planId: string) {
         xpEarned
       );
 
-      // Mark day as complete  
-      await db.studyDays.update(state.studyDay.id, {
-        completed: true,
-      });
-
-      // Update user stats
-      const stats = await db.userStats.get('default');
-      if (stats) {
-        await db.userStats.update('default', {
-          totalXP: stats.totalXP + xpEarned,
-          lastStudyDate: new Date(),
+      // Mark day as complete
+      try {
+        await db.studyDays.update(state.studyDay.id, {
+          completed: true,
         });
+      } catch (dayError) {
+        console.error('Warning: Could not mark day complete:', dayError);
+        // Don't fail - non-critical
+      }
+
+      // Update user stats (non-critical)
+      try {
+        const stats = await db.userStats.get('default');
+        if (stats) {
+          await db.userStats.update('default', {
+            totalXP: stats.totalXP + xpEarned,
+            lastStudyDate: new Date(),
+          });
+        }
+      } catch (statsError) {
+        console.error('Warning: Could not update stats:', statsError);
+        // Don't fail - non-critical
       }
 
       dispatch({ type: 'COMPLETE_SESSION', payload: xpEarned });
     } catch (error) {
-      console.error('Failed to complete session:', error);
-      // Still mark complete even if save fails
-      dispatch({ type: 'COMPLETE_SESSION', payload: 0 });
+      console.error('Failed to save quiz results (critical):', error);
+      // THROW - this is critical, user needs to know
+      throw error;
     }
   }, [state.studyDay, state.quizAttempts, state.flashcardsReviewed]);
 
