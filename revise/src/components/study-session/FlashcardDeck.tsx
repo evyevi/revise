@@ -7,6 +7,7 @@ interface FlashcardDeckProps {
   onNext: () => void;
   onPrev: () => void;
   onSkip: () => void;
+  onCardGraded?: (cardId: string, correct: boolean) => void;
 }
 
 export function FlashcardDeck({
@@ -15,9 +16,26 @@ export function FlashcardDeck({
   onNext,
   onPrev,
   onSkip,
+  onCardGraded,
 }: FlashcardDeckProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showFeedback, setShowFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const card = cards[currentIndex];
+
+  const handleGrade = (correct: boolean) => {
+    setShowFeedback(correct ? 'correct' : 'incorrect');
+    
+    if (onCardGraded) {
+      onCardGraded(card.id, correct);
+    }
+
+    // Auto-advance after feedback
+    setTimeout(() => {
+      setShowFeedback(null);
+      setIsFlipped(false);
+      onNext();
+    }, 300);
+  };
 
   if (cards.length === 0 || !card) {
     return (
@@ -62,8 +80,17 @@ export function FlashcardDeck({
             isFlipped
               ? 'from-blue-100 to-blue-50'
               : 'from-primary-100 to-primary-50'
-          } rounded-3xl p-8 shadow-lg aspect-square flex flex-col items-center justify-center text-center transition-all transform hover:scale-105`}
+          } rounded-3xl p-8 shadow-lg aspect-square flex flex-col items-center justify-center text-center transition-all transform hover:scale-105 relative`}
         >
+          {/* Feedback overlay */}
+          {showFeedback && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/50 animate-pulse">
+              <div className={`text-6xl font-bold ${showFeedback === 'correct' ? 'text-green-400' : 'text-red-400'}`}>
+                {showFeedback === 'correct' ? '✓' : '✗'}
+              </div>
+            </div>
+          )}
+
           <div className="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-wider">
             {isFlipped ? '📝 Answer' : '❓ Question'}
           </div>
@@ -77,6 +104,24 @@ export function FlashcardDeck({
           <div className="text-xs text-gray-500 mt-8">Tap to flip</div>
         </div>
       </div>
+
+      {/* Grading buttons (only show when flipped and no feedback) */}
+      {isFlipped && showFeedback === null && (
+        <div className="flex gap-3 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <button
+            onClick={() => handleGrade(false)}
+            className="flex-1 bg-orange-100 text-orange-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-orange-500 hover:bg-orange-200"
+          >
+            Need Review ✗
+          </button>
+          <button
+            onClick={() => handleGrade(true)}
+            className="flex-1 bg-green-100 text-green-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-green-500 hover:bg-green-200"
+          >
+            Got it! ✓
+          </button>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="space-y-3">
