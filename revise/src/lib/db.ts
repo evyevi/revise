@@ -8,6 +8,7 @@ import type {
   UserStats,
   UploadedFile,
 } from '../types';
+import { updateStreak } from './streakService';
 
 export class StudyPlannerDB extends Dexie {
   studyPlans!: Table<StudyPlan, string>;
@@ -56,4 +57,38 @@ export async function initUserStats(): Promise<UserStats> {
 export async function getUserStats(): Promise<UserStats> {
   const stats = await db.userStats.get('default');
   return stats || initUserStats();
+}
+
+export interface SessionCompletionContext {
+  xpEarned: number;
+  newBadges?: string[];
+  quizScoresInSession?: number[];
+  flashcardsCompleted?: number;
+}
+
+export async function updateUserStatsOnSessionComplete(
+  context: SessionCompletionContext
+): Promise<UserStats> {
+  const stats = await getUserStats();
+  const today = new Date();
+
+  // Calculate streak update
+  const streakUpdate = updateStreak(
+    stats.currentStreak,
+    stats.lastStudyDate,
+    stats.longestStreak
+  );
+
+  // Update stats
+  await db.userStats.update('default', {
+    totalXP: stats.totalXP + context.xpEarned,
+    currentStreak: streakUpdate.currentStreak,
+    longestStreak: streakUpdate.longestStreak,
+    badges: context.newBadges 
+      ? Array.from(new Set([...stats.badges, ...context.newBadges]))
+      : stats.badges,
+    lastStudyDate: today,
+  });
+
+  return (await db.userStats.get('default'))!;
 }
