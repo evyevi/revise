@@ -4,17 +4,12 @@ import { getBadgeMetadata, BadgeType } from '../lib/badgeService';
 
 export interface BadgeUnlockProps {
   badgeId: BadgeType;
-  duration?: number; // display duration in seconds (default: 3)
 }
 
 export const BadgeUnlock = React.memo(function BadgeUnlock({ 
-  badgeId, 
-  duration = 3 
+  badgeId
 }: BadgeUnlockProps) {
-  // Get badge metadata
-  const badge = getBadgeMetadata(badgeId);
-
-  // Check for prefers-reduced-motion
+  // Check for prefers-reduced-motion (hook must be called unconditionally)
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
       return false;
@@ -22,12 +17,7 @@ export const BadgeUnlock = React.memo(function BadgeUnlock({
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
-  // Return null if badge not found
-  if (!badge) {
-    return null;
-  }
-
-  // Memoize container animation
+  // Memoize container animation (before conditional)
   const containerVariants = useMemo(() => ({
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -94,6 +84,14 @@ export const BadgeUnlock = React.memo(function BadgeUnlock({
       y: custom.y,
     }),
   }), [prefersReducedMotion]);
+
+  // Get badge metadata (after all hooks)
+  const badge = getBadgeMetadata(badgeId);
+
+  // Return null if badge not found
+  if (!badge) {
+    return null;
+  }
 
   return (
     <motion.div
