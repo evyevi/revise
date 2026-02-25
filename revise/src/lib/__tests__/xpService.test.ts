@@ -24,6 +24,18 @@ describe('XP Service', () => {
     it('should return 0 XP for no correct answers', () => {
       expect(calculateQuizAnswerXP(0)).toBe(0);
     });
+
+    it('should throw Error for negative correctCount', () => {
+      expect(() => calculateQuizAnswerXP(-1)).toThrow(
+        'Invalid correctCount: -1. Must be between 0 and 999.'
+      );
+    });
+
+    it('should throw Error for correctCount > 999', () => {
+      expect(() => calculateQuizAnswerXP(1000)).toThrow(
+        'Invalid correctCount: 1000. Must be between 0 and 999.'
+      );
+    });
   });
 
   describe('calculateFlashcardXP', () => {
@@ -57,6 +69,12 @@ describe('XP Service', () => {
 
     it('should handle higher milestones (9+ days)', () => {
       expect(calculateStreakBonus(9)).toBe(60);
+    });
+
+    it('should throw Error for negative streak', () => {
+      expect(() => calculateStreakBonus(-1)).toThrow(
+        'Invalid streak: -1. Must be greater than or equal to 0.'
+      );
     });
   });
 
