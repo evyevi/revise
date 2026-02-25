@@ -1,4 +1,8 @@
+import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import type { QuizQuestion } from '../../types';
+import { calculateQuizAnswerXP, calculatePerfectQuizBonus } from '../../lib/xpService';
+import { XPGain } from '../XPGain';
 
 interface QuizScreenProps {
   quizzes: QuizQuestion[];
@@ -9,6 +13,11 @@ interface QuizScreenProps {
   onPrev: () => void;
 }
 
+interface XPGainAnimation {
+  id: string;
+  amount: number;
+}
+
 export function QuizScreen({
   quizzes,
   currentIndex,
@@ -17,6 +26,35 @@ export function QuizScreen({
   onNext,
   onPrev,
 }: QuizScreenProps) {
+  const [xpGains, setXpGains] = useState<XPGainAnimation[]>([]);
+  const [processedAnswers, setProcessedAnswers] = useState<Set<string>>(new Set());
+
+  // Trigger XP animation when a correct answer is given
+  useEffect(() => {
+    if (currentIndex < quizzes.length) {
+      const quiz = quizzes[currentIndex];
+      const selectedAnswer = answers.get(quiz.id);
+      
+      // Check if this is a newly answered question
+      if (selectedAnswer !== undefined && 
+          !processedAnswers.has(quiz.id) && 
+          selectedAnswer === quiz.correctAnswerIndex) {
+        // Correct answer! Show +10 XP
+        const xpGainId = `xp-${Date.now()}-${Math.random()}`;
+        setXpGains((prev) => [...prev, { id: xpGainId, amount: 10 }]);
+        
+        // Mark as processed
+        setProcessedAnswers((prev) => new Set(prev).add(quiz.id));
+        
+        // Remove animation after it completes (2 seconds)
+        setTimeout(() => {
+          setXpGains((prev) => prev.filter((xp) => xp.id !== xpGainId));
+        }, 2000);
+      }
+    }
+  }, [currentIndex, answers, quizzes, processedAnswers]);
+
+  // Handle empty quiz list first
   if (quizzes.length === 0) {
     return (
       <div className="p-6 text-center">
@@ -26,6 +64,91 @@ export function QuizScreen({
           className="bg-primary-500 text-white py-3 px-6 rounded-lg font-semibold"
         >
           Complete Session
+        </button>
+      </div>
+    );
+  }
+
+  // Check if we should show results screen
+  const showResults = currentIndex >= quizzes.length;
+
+  if (showResults) {
+    // Calculate quiz results
+    const correctCount = Array.from(answers.entries()).filter(([quizId, answerIndex]) => {
+      const quiz = quizzes.find((q) => q.id === quizId);
+      return quiz && quiz.correctAnswerIndex === answerIndex;
+    }).length;
+
+    const score = quizzes.length > 0 ? Math.round((correctCount / quizzes.length) * 100) : 0;
+    const isPerfect = score === 100;
+
+    // Calculate XP
+    const baseXP = calculateQuizAnswerXP(correctCount);
+    const perfectBonus = calculatePerfectQuizBonus(isPerfect);
+    const totalXP = baseXP + perfectBonus;
+
+    // Determine tiered feedback
+    let feedback = '';
+    let emoji = '';
+    
+    if (score >= 80) {
+      feedback = "Amazing! You're crushing it!";
+      emoji = '🎉';
+    } else if (score >= 60) {
+      feedback = "Good work! You're learning and improving!";
+      emoji = '💪';
+    } else if (score >= 40) {
+      feedback = "Keep going! Every practice helps you learn!";
+      emoji = '🌟';
+    } else {
+      feedback = "Don't worry! This content will come up again tomorrow. You've got this!";
+      emoji = '💖';
+    }
+
+    return (
+      <div className="p-6 pb-32 text-center">
+        <h1 className="text-3xl font-bold mb-4">Quiz Complete!</h1>
+        
+        {/* Score Display */}
+        <div className="mb-6">
+          <div className="text-6xl font-bold text-primary-500 mb-2">
+            {score}%
+          </div>
+          <div className="text-gray-600">
+            {correctCount} out of {quizzes.length} correct
+          </div>
+        </div>
+
+        {/* Tiered Feedback */}
+        <div className="mb-8">
+          <div className="text-4xl mb-3">{emoji}</div>
+          <p className="text-xl font-semibold text-gray-900">{feedback}</p>
+        </div>
+
+        {/* XP Summary */}
+        <div className="bg-primary-50 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-center gap-2 text-2xl font-bold text-primary-600 mb-4">
+            <span>♥</span>
+            <span>{totalXP} XP earned</span>
+          </div>
+          
+          {/* XP Breakdown */}
+          <div className="text-sm text-gray-700 space-y-1">
+            <div>Base: {correctCount} × 10 = {baseXP} XP</div>
+            {isPerfect && (
+              <div className="font-semibold text-primary-600">
+                Perfect Quiz Bonus: +{perfectBonus} XP
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Continue Button */}
+        <button
+          onClick={onNext}
+          className="w-full bg-primary-500 text-white py-4 rounded-lg font-semibold text-lg active:scale-95 transition-transform"
+        >
+          Continue
         </button>
       </div>
     );
@@ -140,6 +263,13 @@ export function QuizScreen({
           </button>
         </div>
       )}
+
+      {/* XP Gain Animations */}
+      <AnimatePresence>
+        {xpGains.map((xp) => (
+          <XPGain key={xp.id} amount={xp.amount} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
