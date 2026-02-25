@@ -12,13 +12,36 @@ export function Home() {
   const [stats, setStats] = useState({
     xp: 0,
     streak: 0,
-    totalPlans: 0,
+    badges: 0,
     activePlans: 0,
   });
+  const [nextBadgeProgress, setNextBadgeProgress] = useState<
+    { current: number; target: number; name: string } | undefined
+  >(undefined);
   const [dayProgress, setDayProgress] = useState<Map<string, number>>(new Map());
   const [todayCompleted, setTodayCompleted] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const getNextBadgeProgress = (currentStreak: number) => {
+    if (currentStreak === 3) {
+      return {
+        current: 3,
+        target: 5,
+        name: 'On Fire! (5 days)',
+      };
+    }
+
+    if (currentStreak === 5) {
+      return {
+        current: 5,
+        target: 7,
+        name: 'Unstoppable! (7 days)',
+      };
+    }
+
+    return undefined;
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -30,9 +53,10 @@ export function Home() {
       setStats({
         xp: userStats.totalXP,
         streak: userStats.currentStreak,
-        totalPlans: 0, // Will be calculated from completed plans
+        badges: userStats.badges.length,
         activePlans: 0,
       });
+      setNextBadgeProgress(getNextBadgeProgress(userStats.currentStreak));
 
       // Load all study plans
       const allPlans = await db.studyPlans.toArray();
@@ -56,17 +80,11 @@ export function Home() {
 
       const progressMap = new Map<string, number>();
       const completedTodaySet = new Set<string>();
-      let completedPlansCount = 0;
 
       for (const plan of allPlans) {
         const days = daysByPlan.get(plan.id) || [];
         const completedCount = days.filter((d) => d.completed).length;
         progressMap.set(plan.id, completedCount);
-
-        // Check if plan is fully completed (all study days done)
-        if (completedCount === plan.totalDays) {
-          completedPlansCount++;
-        }
 
         // Check if today's session is completed
         const todaySession = days.find(
@@ -80,11 +98,10 @@ export function Home() {
       setDayProgress(progressMap);
       setTodayCompleted(completedTodaySet);
 
-      // Update active plans count and completed plans count
+      // Update active plans count
       setStats((prev) => ({
         ...prev,
         activePlans: allPlans.length,
-        totalPlans: completedPlansCount,
       }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -160,7 +177,13 @@ export function Home() {
           </p>
         </div>
 
-        <StudyDashboard {...stats} />
+        <StudyDashboard
+          xp={stats.xp}
+          streak={stats.streak}
+          badges={stats.badges}
+          activePlans={stats.activePlans}
+          nextBadgeProgress={nextBadgeProgress}
+        />
 
         {/* Plans section */}
         <div className="mb-6">
