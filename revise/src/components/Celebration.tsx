@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 export type CelebrationType = 'confetti' | 'hearts' | 'sparkles';
@@ -9,7 +9,44 @@ export interface CelebrationProps {
   className?: string;
 }
 
-export function Celebration({ type, duration, className = '' }: CelebrationProps) {
+type ConfettiParticle = {
+  id: string;
+  emoji: string;
+  left: number;
+  delay: number;
+  duration: number;
+};
+
+type HeartParticle = {
+  id: string;
+  emoji: string;
+  left: number;
+  delay: number;
+  duration: number;
+};
+
+type SparkleParticle = {
+  id: string;
+  emoji: string;
+  left: number;
+  top: number;
+  delay: number;
+  duration: number;
+};
+
+type Particle = ConfettiParticle | HeartParticle | SparkleParticle;
+
+export const Celebration = React.memo(function Celebration({ 
+  type, 
+  duration, 
+  className = '' 
+}: CelebrationProps) {
+  // Check for reduced motion preference (WCAG compliance)
+  const prefersReducedMotion = useMemo(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+
   const particles = useMemo(() => {
     if (type === 'confetti') {
       return Array.from({ length: 30 }, (_, i) => ({
@@ -18,7 +55,7 @@ export function Celebration({ type, duration, className = '' }: CelebrationProps
         left: Math.random() * 100,
         delay: Math.random() * 0.5,
         duration: 2 + Math.random(),
-      }));
+      })) as ConfettiParticle[];
     }
 
     if (type === 'hearts') {
@@ -28,7 +65,7 @@ export function Celebration({ type, duration, className = '' }: CelebrationProps
         left: 40 + Math.random() * 20, // Center area
         delay: i * 0.15,
         duration: 2,
-      }));
+      })) as HeartParticle[];
     }
 
     if (type === 'sparkles') {
@@ -39,13 +76,14 @@ export function Celebration({ type, duration, className = '' }: CelebrationProps
         top: Math.random() * 100,
         delay: i * 0.075,
         duration: 1.5,
-      }));
+      })) as SparkleParticle[];
     }
 
     return [];
   }, [type]);
 
-  const getAnimation = (particle: typeof particles[0]) => {
+  // Memoize getAnimation function to prevent recreation on every render
+  const getAnimation = useCallback((_particle: Particle) => {
     if (type === 'confetti') {
       return {
         y: ['-10%', '110vh'],
@@ -71,13 +109,25 @@ export function Celebration({ type, duration, className = '' }: CelebrationProps
     }
 
     return {};
-  };
+  }, [type]);
+
+  // Memoize style object to prevent recreation on every render
+  const containerStyle = useMemo(
+    () => ({ '--celebration-duration': `${duration}ms` } as React.CSSProperties),
+    [duration]
+  );
+
+  // If user prefers reduced motion, render nothing
+  if (prefersReducedMotion) {
+    return null;
+  }
 
   return (
     <div
       data-testid="celebration-container"
       className={`celebration-${type} fixed inset-0 pointer-events-none ${className}`}
-      style={{ '--celebration-duration': `${duration}ms` } as React.CSSProperties}
+      style={containerStyle}
+      aria-hidden="true"
     >
       {particles.map((particle) => (
         <motion.div
@@ -85,8 +135,9 @@ export function Celebration({ type, duration, className = '' }: CelebrationProps
           className="absolute text-2xl"
           style={{
             left: `${particle.left}%`,
-            top: type === 'sparkles' ? `${particle.top}%` : type === 'hearts' ? 'auto' : '0',
+            top: type === 'sparkles' ? `${(particle as SparkleParticle).top}%` : type === 'hearts' ? 'auto' : '0',
             bottom: type === 'hearts' ? '10%' : 'auto',
+            willChange: 'transform, opacity',
           }}
           initial={false}
           animate={getAnimation(particle)}
@@ -101,4 +152,4 @@ export function Celebration({ type, duration, className = '' }: CelebrationProps
       ))}
     </div>
   );
-}
+});
