@@ -126,5 +126,86 @@ describe('streakService', () => {
       expect(result.longestStreak).toBe(20);
       expect(result.shouldIncrease).toBe(true);
     });
+
+    it('handles zero streak value', () => {
+      const yesterday = createDate(1);
+      const result = updateStreak(0, yesterday);
+      expect(result.currentStreak).toBe(1);
+      expect(result.shouldIncrease).toBe(true);
+    });
+
+    it('throws error for negative streak value', () => {
+      const yesterday = createDate(1);
+      expect(() => updateStreak(-1, yesterday)).toThrow('currentStreak cannot be negative');
+    });
+
+    it('throws error for non-finite streak value (NaN)', () => {
+      const yesterday = createDate(1);
+      expect(() => updateStreak(NaN, yesterday)).toThrow('currentStreak must be a finite number');
+    });
+
+    it('throws error for non-finite streak value (Infinity)', () => {
+      const yesterday = createDate(1);
+      expect(() => updateStreak(Infinity, yesterday)).toThrow('currentStreak must be a finite number');
+    });
+
+    it('throws error when longestStreak < currentStreak', () => {
+      const yesterday = createDate(1);
+      expect(() => updateStreak(10, yesterday, 5)).toThrow('longestStreak cannot be less than currentStreak');
+    });
+
+    it('handles large streak values near max safe integer', () => {
+      const yesterday = createDate(1);
+      const largeStreak = Number.MAX_SAFE_INTEGER - 1;
+      const result = updateStreak(largeStreak, yesterday);
+      expect(result.currentStreak).toBe(largeStreak + 1);
+      expect(result.shouldIncrease).toBe(true);
+    });
+
+    it('handles Invalid Date object', () => {
+      const invalidDate = new Date('invalid');
+      const result = updateStreak(5, invalidDate);
+      expect(result.currentStreak).toBe(1);
+      expect(result.shouldIncrease).toBe(true);
+    });
+
+    it('handles future date (should treat as invalid)', () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 1);
+      const result = updateStreak(5, futureDate);
+      expect(result.currentStreak).toBe(1);
+      expect(result.shouldIncrease).toBe(true);
+    });
+
+    it('correctly handles exact 3-day boundary (reset threshold)', () => {
+      const threeDaysAgo = createDate(3);
+      const result = updateStreak(5, threeDaysAgo);
+      expect(result.currentStreak).toBe(1);
+      expect(result.shouldIncrease).toBe(true);
+    });
+  });
+
+  describe('edge cases - Invalid Dates and future dates', () => {
+    it('shouldResetStreak returns true for Invalid Date', () => {
+      const invalidDate = new Date('invalid');
+      expect(shouldResetStreak(invalidDate)).toBe(true);
+    });
+
+    it('shouldResetStreak returns true for future date', () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 5);
+      expect(shouldResetStreak(futureDate)).toBe(true);
+    });
+
+    it('isStreakActive returns false for Invalid Date', () => {
+      const invalidDate = new Date('invalid');
+      expect(isStreakActive(invalidDate)).toBe(false);
+    });
+
+    it('isStreakActive returns false for future date', () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 1);
+      expect(isStreakActive(futureDate)).toBe(false);
+    });
   });
 });
