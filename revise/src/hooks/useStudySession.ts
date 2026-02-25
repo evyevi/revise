@@ -5,7 +5,9 @@ import {
   getCardsByTopicIds,
   getQuizzesByTopicIds,
 } from '../lib/planQueries';
-import type { StudyDay, Flashcard, QuizQuestion } from '../types';
+import { recordFlashcardReview } from '../lib/reviewService';
+import { calculateQuizScore, saveQuizResults } from '../lib/quizGrader';
+import type { StudyDay, Flashcard, QuizQuestion, QuizAttempt } from '../types';
 
 export interface SessionState {
   step: 'concepts' | 'flashcards' | 'quiz' | 'completion' | 'loading' | 'error';
@@ -19,6 +21,8 @@ export interface SessionState {
   quizAnswers: Map<string, number>; // quiz id -> answer index
   xpEarned: number;
   error: string | null;
+  flashcardsReviewed: number;
+  quizAttempts: QuizAttempt[];
 }
 
 type SessionAction =
@@ -31,7 +35,9 @@ type SessionAction =
   | { type: 'ANSWER_QUIZ'; payload: { quizIndex: number; answerIndex: number } }
   | { type: 'NEXT_QUIZ' }
   | { type: 'PREV_QUIZ' }
-  | { type: 'COMPLETE_SESSION'; payload: number };
+  | { type: 'COMPLETE_SESSION'; payload: number }
+  | { type: 'INCREMENT_FLASHCARDS_REVIEWED' }
+  | { type: 'ADD_QUIZ_ATTEMPT'; payload: QuizAttempt };
 
 function getInitialState(): SessionState {
   return {
@@ -46,6 +52,8 @@ function getInitialState(): SessionState {
     quizAnswers: new Map(),
     xpEarned: 0,
     error: null,
+    flashcardsReviewed: 0,
+    quizAttempts: [],
   };
 }
 
@@ -124,6 +132,12 @@ function sessionReducer(state: SessionState, action: SessionAction): SessionStat
         xpEarned: action.payload,
       };
     
+    case 'INCREMENT_FLASHCARDS_REVIEWED':
+      return { ...state, flashcardsReviewed: state.flashcardsReviewed + 1 };
+    
+    case 'ADD_QUIZ_ATTEMPT':
+      return { ...state, quizAttempts: [...state.quizAttempts, action.payload] };
+    
     default:
       return state;
   }
@@ -197,9 +211,28 @@ export function useStudySession(planId: string) {
     dispatch({ type: 'PREV_FLASHCARD' });
   }, []);
 
+  const gradeFlashcard = useCallback(async (cardId: string, correct: boolean) => {
+    // Call ReviewService to update mastery
+    await recordFlashcardReview(cardId, correct);
+    
+    // Update count in state
+    dispatch({ type: 'INCREMENT_FLASHCARDS_REVIEWED' });
+  }, []);
+
   const answerQuiz = useCallback((quizIndex: number, answerIndex: number) => {
     dispatch({ type: 'ANSWER_QUIZ', payload: { quizIndex, answerIndex } });
-  }, []);
+    
+    // Record attempt
+    const quiz = state.quizzes[quizIndex];
+    if (quiz) {
+      const attempt: QuizAttempt = {
+        questionId: quiz.id,
+        selectedAnswer: answerIndex,
+        correct: answerIndex === quiz.correctAnswerIndex,
+      };
+      dispatch({ type: 'ADD_QUIZ_ATTEMPT', payload: attempt });
+    }
+  }, [state.quizzes]);
 
   const nextQuiz = useCallback(() => {
     dispatch({ type: 'NEXT_QUIZ' });
@@ -209,8 +242,8 @@ export function useStudySession(planId: string) {
     dispatch({ type: 'PREV_QUIZ' });
   }, []);
 
-  const completeSession = useCallback(async (xp: number, studyDayId: string) => {
-    if (!studyDayId) {
+  const completeSession = useCallback(async () => {
+    if (!state.studyDay) {
       dispatch({
         type: 'INIT_ERROR',
         payload: 'No study day found. Please try again.',
@@ -219,36 +252,52 @@ export function useStudySession(planId: string) {
     }
 
     try {
-      // Mark day as complete
-      await db.studyDays.update(studyDayId, {
+      // Calculate XP: (quiz score / 10) + (cards reviewed * 2)
+      const quizScore = calculateQuizScore(state.quizAttempts);
+      const xpEarned = Math.floor(quizScore / 10) + (state.flashcardsReviewed * 2);
+
+      // Save quiz results
+      await saveQuizResults(
+        state.studyDay.planId,
+        state.studyDay.id,
+        state.quizAttempts,
+        state.flashcardsReviewed,
+        xpEarned
+      );
+
+      // Mark day as complete  
+      await db.studyDays.update(state.studyDay.id, {
         completed: true,
       });
 
-      // Add XP to user stats
+      // Update user stats
       const stats = await db.userStats.get('default');
       if (stats) {
         await db.userStats.update('default', {
-          totalXP: stats.totalXP + xp,
+          totalXP: stats.totalXP + xpEarned,
+          lastStudyDate: new Date(),
         });
       }
 
-      dispatch({ type: 'COMPLETE_SESSION', payload: xp });
-    } catch {
-      dispatch({
-        type: 'INIT_ERROR',
-        payload: 'Failed to save progress. Please try again.',
-      });
+      dispatch({ type: 'COMPLETE_SESSION', payload: xpEarned });
+    } catch (error) {
+      console.error('Failed to complete session:', error);
+      // Still mark complete even if save fails
+      dispatch({ type: 'COMPLETE_SESSION', payload: 0 });
     }
-  }, []);
+  }, [state.studyDay, state.quizAttempts, state.flashcardsReviewed]);
 
   return {
     ...state,
     advanceStep,
     nextFlashcard,
     prevFlashcard,
+    gradeFlashcard,
     answerQuiz,
     nextQuiz,
     prevQuiz,
     completeSession,
+    flashcardsReviewed: state.flashcardsReviewed,
+    quizAttempts: state.quizAttempts,
   };
 }
