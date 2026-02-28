@@ -36,7 +36,7 @@ function StatCard({ label, value, emoji, gradient }: StatCardProps) {
       variants={itemVariants}
       className={`rounded-xl bg-gradient-to-br ${gradient} p-4 text-center shadow-sm`}
     >
-      <div className="text-2xl">{emoji}</div>
+      <div className="text-2xl" aria-hidden="true">{emoji}</div>
       <div className="mt-1 text-xl font-bold text-gray-900">{value}</div>
       <div className="mt-0.5 text-xs font-medium text-gray-600">{label}</div>
     </motion.div>

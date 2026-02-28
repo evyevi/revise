@@ -46,12 +46,12 @@ export function TopicMasteryGrid({ topics }: TopicMasteryGridProps) {
             key={topic.topicId}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: index * 0.05, duration: 0.25 }}
+            transition={{ delay: Math.min(index * 0.05, 0.4), duration: 0.25 }}
             className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm"
           >
             <p className="text-sm font-medium text-gray-800 truncate">{topic.topicName}</p>
 
-            <div className="mt-2 h-2 w-full rounded-full bg-gray-100">
+            <div className="mt-2 h-2 w-full rounded-full bg-gray-100" role="progressbar" aria-valuenow={Math.round(topic.averageMastery)} aria-valuemin={0} aria-valuemax={5} aria-label={`${topic.topicName} mastery`}>
               <div
                 className="h-full rounded-full bg-primary-500 transition-all"
                 style={{ width: `${widthPercent}%` }}

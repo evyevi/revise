@@ -36,7 +36,7 @@ export function PlanProgressList({ plans }: PlanProgressListProps) {
           key={plan.planId}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.1 }}
+          transition={{ delay: Math.min(index * 0.1, 0.5) }}
           className="bg-white rounded-xl shadow-sm p-4"
         >
           <div className="flex items-center justify-between mb-2">
@@ -47,7 +47,7 @@ export function PlanProgressList({ plans }: PlanProgressListProps) {
             <span className="text-sm font-medium text-gray-600">{plan.percentage}%</span>
           </div>
 
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
+          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2" role="progressbar" aria-valuenow={plan.percentage} aria-valuemin={0} aria-valuemax={100} aria-label={`${plan.subject} progress`}>
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600"
               initial={{ width: 0 }}

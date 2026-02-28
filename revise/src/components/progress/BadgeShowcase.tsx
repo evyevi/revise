@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { getAllBadges } from '../../lib/badgeService';
+import type { Badge } from '../../lib/badgeService';
 
 interface BadgeShowcaseProps {
   earnedBadges: string[];
+  badges: Badge[];
 }
 
-export function BadgeShowcase({ earnedBadges }: BadgeShowcaseProps) {
-  const badges = getAllBadges();
+export function BadgeShowcase({ earnedBadges, badges }: BadgeShowcaseProps) {
 
   return (
     <div className="grid grid-cols-2 gap-3">
