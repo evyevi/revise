@@ -49,7 +49,8 @@ export function shouldResetStreak(lastStudyDate: Date | undefined): boolean {
   const normalized = normalizeDate(lastStudyDate);
   if (!normalized) return true;
 
-  const today = normalizeDate(new Date())!;
+  const today = normalizeDate(new Date());
+  if (!today) return true;
   const daysSinceLastStudy = daysBetween(normalized, today);
 
   return daysSinceLastStudy > RESET_THRESHOLD_DAYS;
@@ -69,7 +70,8 @@ export function isStreakActive(lastStudyDate: Date | undefined): boolean {
   const normalized = normalizeDate(lastStudyDate);
   if (!normalized) return false;
 
-  const today = normalizeDate(new Date())!;
+  const today = normalizeDate(new Date());
+  if (!today) return false;
   const daysSinceLastStudy = daysBetween(normalized, today);
 
   return daysSinceLastStudy <= GRACE_PERIOD_DAYS;
@@ -104,7 +106,16 @@ export function updateStreak(
   }
   
   const defaultLongestStreak = longestStreak ?? currentStreak;
-  const today = normalizeDate(new Date())!;
+  const today = normalizeDate(new Date());
+
+  // Safety check: today should always normalize successfully
+  if (!today) {
+    return {
+      currentStreak,
+      longestStreak: defaultLongestStreak,
+      shouldIncrease: false,
+    };
+  }
 
   // No previous study activity - start new streak
   if (!lastStudyDate) {

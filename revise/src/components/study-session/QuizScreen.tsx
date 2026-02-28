@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { QuizQuestion } from '../../types';
 import { calculateQuizAnswerXP, calculatePerfectQuizBonus } from '../../lib/xpService';
@@ -29,30 +29,21 @@ export function QuizScreen({
   const [xpGains, setXpGains] = useState<XPGainAnimation[]>([]);
   const [processedAnswers, setProcessedAnswers] = useState<Set<string>>(new Set());
 
-  // Trigger XP animation when a correct answer is given
-  useEffect(() => {
-    if (currentIndex < quizzes.length) {
-      const quiz = quizzes[currentIndex];
-      const selectedAnswer = answers.get(quiz.id);
-      
-      // Check if this is a newly answered question
-      if (selectedAnswer !== undefined && 
-          !processedAnswers.has(quiz.id) && 
-          selectedAnswer === quiz.correctAnswerIndex) {
-        // Correct answer! Show +10 XP
-        const xpGainId = `xp-${Date.now()}-${Math.random()}`;
-        setXpGains((prev) => [...prev, { id: xpGainId, amount: 10 }]);
-        
-        // Mark as processed
-        setProcessedAnswers((prev) => new Set(prev).add(quiz.id));
-        
-        // Remove animation after it completes (2 seconds)
-        setTimeout(() => {
-          setXpGains((prev) => prev.filter((xp) => xp.id !== xpGainId));
-        }, 2000);
-      }
+  // Wrap onAnswer to trigger XP animation on correct answers
+  const handleAnswer = useCallback((quizIndex: number, answerIndex: number) => {
+    onAnswer(quizIndex, answerIndex);
+
+    const quiz = quizzes[quizIndex];
+    if (quiz && !processedAnswers.has(quiz.id) && answerIndex === quiz.correctAnswerIndex) {
+      const xpGainId = `xp-${Date.now()}-${Math.random()}`;
+      setXpGains((prev) => [...prev, { id: xpGainId, amount: 10 }]);
+      setProcessedAnswers((prev) => new Set(prev).add(quiz.id));
+
+      setTimeout(() => {
+        setXpGains((prev) => prev.filter((xp) => xp.id !== xpGainId));
+      }, 2000);
     }
-  }, [currentIndex, answers, quizzes, processedAnswers]);
+  }, [onAnswer, quizzes, processedAnswers]);
 
   // Handle empty quiz list first
   if (quizzes.length === 0) {
@@ -203,7 +194,7 @@ export function QuizScreen({
             return (
               <button
                 key={index}
-                onClick={() => onAnswer(currentIndex, index)}
+                onClick={() => handleAnswer(currentIndex, index)}
                 disabled={selectedAnswer !== undefined}
                 className={`w-full p-4 rounded-xl text-left font-medium transition-all ${buttonClass} disabled:opacity-80`}
               >

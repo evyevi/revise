@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { getBadgeMetadata, BadgeType } from '../lib/badgeService';
+import { getBadgeMetadata, type BadgeType } from '../lib/badgeService';
 
 export interface BadgeUnlockProps {
   badgeId: BadgeType;
