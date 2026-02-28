@@ -14,6 +14,8 @@ import type {
 } from '../lib/progressService';
 import type { UserStats } from '../types';
 
+const RECENT_QUIZ_LIMIT = 10;
+
 interface ProgressData {
   isLoading: boolean;
   error: string | null;
@@ -25,15 +27,19 @@ interface ProgressData {
   totalSessions: number;
 }
 
+const INITIAL_STATE: ProgressData = {
+  isLoading: true,
+  error: null,
+  stats: null,
+  planProgress: [],
+  studyActivity: new Map(),
+  topicMastery: [],
+  quizScores: [],
+  totalSessions: 0,
+};
+
 export function useProgressData(): ProgressData {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [planProgress, setPlanProgress] = useState<PlanProgressEntry[]>([]);
-  const [studyActivity, setStudyActivity] = useState<Map<string, StudyActivityEntry>>(new Map());
-  const [topicMastery, setTopicMastery] = useState<TopicMasteryEntry[]>([]);
-  const [quizScores, setQuizScores] = useState<QuizScoreEntry[]>([]);
-  const [totalSessions, setTotalSessions] = useState(0);
+  const [state, setState] = useState<ProgressData>(INITIAL_STATE);
 
   const loadData = useCallback(async () => {
     try {
@@ -44,11 +50,6 @@ export function useProgressData(): ProgressData {
         db.progressLogs.toArray(),
         db.flashcards.toArray(),
       ]);
-
-      setStats(userStats);
-      setTotalSessions(allLogs.length);
-      setStudyActivity(getStudyActivity(allLogs));
-      setQuizScores(getRecentQuizScores(allLogs, 10));
 
       // Group study days by planId
       const daysByPlan = new Map<string, typeof allDays>();
@@ -74,15 +75,26 @@ export function useProgressData(): ProgressData {
           testDate: plan.testDate,
         };
       });
-      setPlanProgress(progress);
 
       // Collect all topics across plans and compute mastery
       const allTopics = plans.flatMap((p) => p.topics);
-      setTopicMastery(getTopicMasteryData(allTopics, allFlashcards));
+
+      setState({
+        isLoading: false,
+        error: null,
+        stats: userStats,
+        totalSessions: allLogs.length,
+        studyActivity: getStudyActivity(allLogs),
+        quizScores: getRecentQuizScores(allLogs, RECENT_QUIZ_LIMIT),
+        planProgress: progress,
+        topicMastery: getTopicMasteryData(allTopics, allFlashcards),
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load progress data');
-    } finally {
-      setIsLoading(false);
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: err instanceof Error ? err.message : 'Failed to load progress data',
+      }));
     }
   }, []);
 
@@ -90,14 +102,5 @@ export function useProgressData(): ProgressData {
     void loadData();
   }, [loadData]);
 
-  return {
-    isLoading,
-    error,
-    stats,
-    planProgress,
-    studyActivity,
-    topicMastery,
-    quizScores,
-    totalSessions,
-  };
+  return state;
 }

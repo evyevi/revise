@@ -25,7 +25,7 @@ export function StudyCalendar({ activityDates, currentDate }: StudyCalendarProps
   const isToday = (day: number) =>
     year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 
-  const cells: React.ReactNode[] = [];
+  const cells: JSX.Element[] = [];
 
   // Empty padding cells
   for (let i = 0; i < startDayOfWeek; i++) {
@@ -71,7 +71,7 @@ export function StudyCalendar({ activityDates, currentDate }: StudyCalendarProps
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">{cells}</div>
+      <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Study activity calendar">{cells}</div>
     </div>
   );
 }

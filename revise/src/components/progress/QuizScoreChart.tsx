@@ -28,11 +28,11 @@ export function QuizScoreChart({ scores }: QuizScoreChartProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6">
+    <div className="bg-white rounded-2xl p-6" role="img" aria-label="Recent quiz scores chart">
       <div className="flex items-end justify-around h-40">
         {scores.map((entry, index) => (
           <div
-            key={entry.date}
+            key={`${entry.date}-${String(index)}`}
             className="flex-1 flex flex-col items-center justify-end h-full"
           >
             <span className="text-xs font-semibold text-gray-600 mb-1">

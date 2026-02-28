@@ -41,7 +41,8 @@ export function Progress() {
     );
   }
 
-  const totalBadges = getAllBadges().length;
+  const allBadges = getAllBadges();
+  const totalBadges = allBadges.length;
 
   return (
     <Layout>
@@ -83,7 +84,7 @@ export function Progress() {
 
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-3">Badges</h2>
-          <BadgeShowcase earnedBadges={stats?.badges ?? []} />
+          <BadgeShowcase earnedBadges={stats?.badges ?? []} badges={allBadges} />
         </section>
       </div>
     </Layout>
