@@ -66,11 +66,8 @@ describe('Text Extraction', () => {
   });
 
   describe('PDF text extraction', () => {
-    let mockGetDocument: ReturnType<typeof vi.fn>;
-
     beforeEach(() => {
       // Mock PDF.js module
-      mockGetDocument = vi.fn();
       vi.doMock('../pdfExtractor', async () => {
         return {
           extractTextFromPDF: vi.fn(),
@@ -81,18 +78,6 @@ describe('Text Extraction', () => {
     it('extracts text from single-page PDF', async () => {
       const { extractTextFromPDF } = await import('../pdfExtractor');
       
-      // Mock a PDF with one page containing text
-      const mockTextItem = { str: 'Hello from PDF' };
-      const mockPage = {
-        getTextContent: vi.fn().mockResolvedValue({
-          items: [mockTextItem],
-        }),
-      };
-      const mockPdf = {
-        numPages: 1,
-        getPage: vi.fn().mockResolvedValue(mockPage),
-      };
-
       // Note: In real test, we'd mock pdfjs module
       // This demonstrates the expected behavior
       expect(extractTextFromPDF).toBeDefined();

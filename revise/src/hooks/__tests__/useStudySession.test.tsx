@@ -111,7 +111,15 @@ describe('useStudySession', () => {
     vi.mocked(planQueries.getCardsByTopicIds).mockResolvedValue(mockFlashcards);
     vi.mocked(planQueries.getQuizzesByTopicIds).mockResolvedValue(mockQuizzes);
     vi.mocked(quizGrader.calculateQuizScore).mockReturnValue(50);
-    vi.mocked(quizGrader.saveQuizResults).mockResolvedValue(undefined);
+    vi.mocked(quizGrader.saveQuizResults).mockResolvedValue({
+      id: 'log-1',
+      planId: mockPlanId,
+      dayId: 'day-1',
+      completedAt: new Date(),
+      xpEarned: 50,
+      quizScore: 50,
+      flashcardsReviewed: 0,
+    });
     vi.mocked(reviewService.recordFlashcardReview).mockResolvedValue(undefined);
   });
 

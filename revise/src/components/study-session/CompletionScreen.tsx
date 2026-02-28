@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Celebration } from '../Celebration';
 import { BadgeUnlock } from '../BadgeUnlock';
-import { getBadgeMetadata, BadgeType } from '../../lib/badgeService';
+import { getBadgeMetadata, type BadgeType } from '../../lib/badgeService';
 
 interface CompletionScreenProps {
   xpEarned: number;
@@ -19,7 +19,7 @@ export const CompletionScreen = React.memo(function CompletionScreen({
   currentStreak,
   onContinue,
 }: CompletionScreenProps) {
-  const [showCelebration, setShowCelebration] = useState(true);
+  const showCelebration = true;
   const [badgeIndex, setBadgeIndex] = useState(0);
 
   // Handle badge unlock flow
@@ -27,11 +27,12 @@ export const CompletionScreen = React.memo(function CompletionScreen({
   const showingBadge = hasNewBadges && badgeIndex < newBadges.length;
 
   const handleBadgeNext = () => {
-    if (badgeIndex < newBadges!.length - 1) {
+    if (!newBadges) return;
+    if (badgeIndex < newBadges.length - 1) {
       setBadgeIndex(badgeIndex + 1);
     } else {
       // All badges shown, proceed to main screen
-      setBadgeIndex(newBadges!.length);
+      setBadgeIndex(newBadges.length);
     }
   };
 
@@ -39,13 +40,13 @@ export const CompletionScreen = React.memo(function CompletionScreen({
   if (showingBadge) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
-        <BadgeUnlock badgeId={newBadges![badgeIndex]} duration={3} />
+        <BadgeUnlock badgeId={newBadges[badgeIndex]} />
         <div className="fixed bottom-8 left-0 right-0 px-6 z-50">
           <button
             onClick={handleBadgeNext}
             className="w-full bg-white text-primary-500 py-4 px-6 rounded-xl font-bold text-lg active:scale-95 transition-transform shadow-lg"
           >
-            {badgeIndex < newBadges!.length - 1 ? 'Next Badge' : 'Continue'}
+            {badgeIndex < newBadges.length - 1 ? 'Next Badge' : 'Continue'}
           </button>
         </div>
       </div>

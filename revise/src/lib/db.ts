@@ -90,5 +90,9 @@ export async function updateUserStatsOnSessionComplete(
     lastStudyDate: today,
   });
 
-  return (await db.userStats.get('default'))!;
+  const updated = await db.userStats.get('default');
+  if (!updated) {
+    throw new Error('Failed to retrieve updated user stats');
+  }
+  return updated;
 }

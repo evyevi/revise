@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BadgeUnlock } from '../BadgeUnlock';
+import type { BadgeType } from '../../lib/badgeService';
 
 describe('BadgeUnlock', () => {
   it('renders badge icon and name', () => {
@@ -42,7 +43,7 @@ describe('BadgeUnlock', () => {
   });
 
   it('returns null for unknown badge ID', () => {
-    const { container } = render(<BadgeUnlock badgeId={'unknown-badge' as any} />);
+    const { container } = render(<BadgeUnlock badgeId={'unknown-badge' as BadgeType} />);
     
     expect(container.firstChild).toBeNull();
   });

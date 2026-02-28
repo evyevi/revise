@@ -114,7 +114,7 @@ describe('CreatePlan wizard', () => {
       step: 1,
       extractedText: 'Extracted text content with some text',
       canProceed: true,
-      isProcessing: true,
+      isGenerating: true,
     });
 
     renderWithRouter(<CreatePlan />);

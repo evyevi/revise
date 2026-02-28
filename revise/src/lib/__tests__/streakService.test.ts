@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   shouldResetStreak,
   isStreakActive,
   updateStreak,
-  GRACE_PERIOD_DAYS,
-  RESET_THRESHOLD_DAYS,
-  type StreakUpdate,
 } from '../streakService';
 
 describe('streakService', () => {

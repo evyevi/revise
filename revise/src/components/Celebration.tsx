@@ -1,11 +1,7 @@
 /**
  * Celebration Animation Component
- * Uses Math.random() inside useMemo, which is appropriate for generating
- * random particle positions. The eslint react-hooks purity rule has false
- * positives with useMemo callbacks, so we disable it for this file.
- * See: https://github.com/facebook/react/issues/24430
+ * Uses Math.random() inside useMemo for generating random particle positions.
  */
-/* eslint-disable react-hooks/rules-of-hooks */
 import React, { useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
@@ -55,6 +51,9 @@ export const Celebration = React.memo(function Celebration({
     []
   );
 
+  // Generate random particle positions - intentionally impure in useMemo
+  // to create stable random values for the component's lifetime
+  /* eslint-disable react-hooks/purity */
   const particles = useMemo(() => {
     if (type === 'confetti') {
       return Array.from({ length: 30 }, (_, i) => ({
@@ -89,6 +88,7 @@ export const Celebration = React.memo(function Celebration({
 
     return [];
   }, [type]);
+  /* eslint-enable react-hooks/purity */
 
   // Memoize getAnimation function to prevent recreation on every render
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -323,10 +323,10 @@ describe('badgeService', () => {
       });
 
       it('handles undefined quiz scores array gracefully', () => {
-        const context = {
+        const context: BadgeUnlockContext = {
           sessionCount: 1,
           currentStreak: 0,
-          quizScoresInSession: undefined as any,
+          quizScoresInSession: undefined as unknown as number[],
           totalFlashcardsCompleted: 0,
           studyPlansCompleted: 0,
         };

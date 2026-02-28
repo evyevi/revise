@@ -90,20 +90,7 @@ export function StudySession() {
               if (session.currentQuizIndex < session.quizzes.length - 1) {
                 session.nextQuiz();
               } else {
-                // Calculate XP and complete session
-                const correct = Array.from(session.quizAnswers.entries()).filter(
-                  ([quizId, answerIndex]) => {
-                    const quiz = session.quizzes.find((q) => q.id === quizId);
-                    return quiz && quiz.correctAnswerIndex === answerIndex;
-                  }
-                ).length;
-
-                const quizCount = session.quizzes.length;
-                const baseXP = 50;
-                const correctXP = (correct / quizCount) * 50;
-                const totalXP = Math.round(baseXP + correctXP);
-
-                void session.completeSession(totalXP, session.studyDay?.id || '');
+                void session.completeSession();
               }
             }}
             onPrev={session.prevQuiz}
@@ -113,14 +100,7 @@ export function StudySession() {
         {session.step === 'completion' && (
           <CompletionScreen
             xpEarned={session.xpEarned}
-            quizScore={
-              session.quizzes.length > 0
-                ? (session.quizzes.filter((quiz) =>
-                    session.quizAnswers.get(quiz.id) === quiz.correctAnswerIndex
-                  ).length / session.quizzes.length) * 100
-                : 0
-            }
-            onHome={() => navigate('/')}
+            onContinue={() => navigate('/')}
           />
         )}
       </div>

@@ -1,6 +1,6 @@
 import { db } from './db';
 import { updateMastery } from './masteryCalculator';
-import type { Flashcard, MasteryLevel } from '../types';
+import type { Flashcard } from '../types';
 
 const MAX_REVIEW_DATES = 100;
 
@@ -26,7 +26,7 @@ export async function recordFlashcardReview(
     }
 
     const now = new Date();
-    const newMasteryLevel = updateMastery(card.masteryLevel as MasteryLevel, correct);
+    const newMasteryLevel = updateMastery(card.masteryLevel, correct);
     
     // Append new review date, trim if > 100
     const newReviewDates = [...card.reviewDates, now];
