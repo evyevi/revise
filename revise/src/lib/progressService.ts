@@ -94,7 +94,7 @@ export function getTopicMasteryData(
     const cardCount = levels.length;
     const averageMastery =
       cardCount > 0
-        ? levels.reduce((sum, v) => sum + v, 0) / cardCount
+        ? Math.round(levels.reduce((sum, v) => sum + v, 0) / cardCount)
         : 0;
 
     return {
