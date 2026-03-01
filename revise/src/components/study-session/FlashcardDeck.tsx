@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Flashcard } from '../../types';
+import { Quality } from '../../lib/sm2Calculator';
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
@@ -7,7 +8,8 @@ interface FlashcardDeckProps {
   onNext: () => void;
   onPrev: () => void;
   onSkip: () => void;
-  onCardGraded?: (cardId: string, correct: boolean) => void;
+  onCardGraded?: (cardId: string, quality: Quality) => void;
+  isLoading?: boolean;
 }
 
 export function FlashcardDeck({
@@ -17,16 +19,19 @@ export function FlashcardDeck({
   onPrev,
   onSkip,
   onCardGraded,
+  isLoading = false,
 }: FlashcardDeckProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFeedback, setShowFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const card = cards[currentIndex];
 
-  const handleGrade = (correct: boolean) => {
-    setShowFeedback(correct ? 'correct' : 'incorrect');
+  const handleGrade = (quality: Quality) => {
+    // Show positive feedback for Good (2) and Easy (3), negative for Again (0) and Hard (1)
+    const isPositive = quality >= 2;
+    setShowFeedback(isPositive ? 'correct' : 'incorrect');
     
     if (onCardGraded) {
-      onCardGraded(card.id, correct);
+      onCardGraded(card.id, quality);
     }
 
     // Auto-advance after feedback
@@ -107,18 +112,53 @@ export function FlashcardDeck({
 
       {/* Grading buttons (only show when flipped and no feedback) */}
       {isFlipped && showFeedback === null && (
-        <div className="flex gap-3 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="grid grid-cols-2 gap-2 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Again - Red */}
           <button
-            onClick={() => handleGrade(false)}
-            className="flex-1 bg-orange-100 text-orange-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-orange-500 hover:bg-orange-200"
+            onClick={() => handleGrade(Quality.Again)}
+            disabled={isLoading}
+            data-testid="grade-again-button"
+            data-quality={Quality.Again}
+            className="bg-red-100 text-red-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-red-500 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center gap-1"
           >
-            Need Review ✗
+            <span>Again</span>
+            <span className="text-xs text-red-600">Today</span>
           </button>
+
+          {/* Hard - Orange */}
           <button
-            onClick={() => handleGrade(true)}
-            className="flex-1 bg-green-100 text-green-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-green-500 hover:bg-green-200"
+            onClick={() => handleGrade(Quality.Hard)}
+            disabled={isLoading}
+            data-testid="grade-hard-button"
+            data-quality={Quality.Hard}
+            className="bg-orange-100 text-orange-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-orange-500 hover:bg-orange-200 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center gap-1"
           >
-            Got it! ✓
+            <span>Hard</span>
+            <span className="text-xs text-orange-600">3 days</span>
+          </button>
+
+          {/* Good - Green */}
+          <button
+            onClick={() => handleGrade(Quality.Good)}
+            disabled={isLoading}
+            data-testid="grade-good-button"
+            data-quality={Quality.Good}
+            className="bg-green-100 text-green-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-green-500 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center gap-1"
+          >
+            <span>Good</span>
+            <span className="text-xs text-green-600">1 week</span>
+          </button>
+
+          {/* Easy - Blue */}
+          <button
+            onClick={() => handleGrade(Quality.Easy)}
+            disabled={isLoading}
+            data-testid="grade-easy-button"
+            data-quality={Quality.Easy}
+            className="bg-blue-100 text-blue-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform border-2 border-blue-500 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center gap-1"
+          >
+            <span>Easy</span>
+            <span className="text-xs text-blue-600">~2 weeks</span>
           </button>
         </div>
       )}
