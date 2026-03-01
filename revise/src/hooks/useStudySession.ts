@@ -7,7 +7,7 @@ import {
 } from '../lib/planQueries';
 import { recordFlashcardReview } from '../lib/reviewService';
 import { calculateQuizScore, saveQuizResults } from '../lib/quizGrader';
-import type { Quality } from '../lib/sm2Calculator';
+import { Quality } from '../lib/sm2Calculator';
 import type { StudyDay, Flashcard, QuizQuestion, QuizAttempt } from '../types';
 
 export interface SessionState {
@@ -225,10 +225,13 @@ export function useStudySession(planId: string) {
     // Record attempt
     const quiz = state.quizzes[quizIndex];
     if (quiz) {
+      const isCorrect = answerIndex === quiz.correctAnswerIndex;
       const attempt: QuizAttempt = {
         questionId: quiz.id,
         selectedAnswer: answerIndex,
-        correct: answerIndex === quiz.correctAnswerIndex,
+        correct: isCorrect,
+        // Derive Quality from correctness: correct → Good, incorrect → Again
+        quality: isCorrect ? Quality.Good : Quality.Again,
       };
       dispatch({ type: 'ADD_QUIZ_ATTEMPT', payload: attempt });
     }

@@ -1,3 +1,5 @@
+import type { Quality } from '../lib/sm2Calculator';
+
 export interface StudyPlan {
   id: string;
   subject: string;
@@ -95,6 +97,8 @@ export interface QuizAttempt {
   correct: boolean;
   /** Duration in milliseconds */
   timeSpent?: number;
+  /** SM-2 quality rating (correct → Good, incorrect → Again) */
+  quality?: Quality;
 }
 
 /**
