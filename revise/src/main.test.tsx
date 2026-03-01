@@ -68,18 +68,20 @@ describe('SM-2 Migration on App Startup', () => {
     const testError = new Error('Database connection failed');
     migrationSpy.mockRejectedValue(testError);
 
-    // Attempt migration - should catch error and log it
-    try {
-      await migrateFlashcardsToSM2().catch((error) => {
-        console.error('Failed to migrate flashcards to SM-2:', error);
-      });
-    } catch (error) {
-      // Should NOT throw - error is caught
-      expect.fail('Migration error should be caught and not thrown');
-    }
+    // Mimic the main.tsx error handling pattern
+    // This should catch and log the error without crashing
+    let errorWasCaught = false;
+    await migrateFlashcardsToSM2().catch((error) => {
+      errorWasCaught = true;
+      console.error('Failed to migrate flashcards to SM-2:', error);
+    });
 
-    // Verify error was logged
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    // Verify error was caught and logged (app didn't crash)
+    expect(errorWasCaught).toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to migrate flashcards to SM-2:',
+      testError
+    );
     consoleErrorSpy.mockRestore();
   });
 
