@@ -3013,8 +3013,25 @@ git commit -m "feat: complete Phase 4 home dashboard and study session UI"
   - UI: ProgressOverview, PlanProgressList, TopicMasteryGrid, StudyCalendar, QuizScoreChart, BadgeShowcase
   - Hook: useProgressData (consolidated state, parallel DB queries)
   - 338/338 tests passing ✅
+- ✅ **Phase 8: Advanced Spaced Repetition - SM-2 Algorithm** (Mar 1, 2026)
+  - [Implementation Plan](./2026-03-01-phase8-sm2-spaced-repetition-implementation.md)
+  - **Algorithm**: SM-2 (SuperMemo 2) spaced repetition with Quality ratings (0-3)
+  - **Services**: SM2Calculator, ReviewService enhancements, planQueries filtering
+  - **Database**: Extended Flashcard schema (easinessFactor, interval, repetitions, nextReviewDate)
+  - **UI**: 4-button grading (Again/Hard/Good/Easy), dashboard SM-2 stats, due card filtering
+  - **Migration**: Automatic migration of existing flashcards to SM-2 format
+  - **Documentation**: Comprehensive user guides (SM2_GUIDE.md, USER_TIPS.md), code JSDoc
+  - **Tasks Completed**: 10/10 (Quality enum, algorithm, DB schema, migration, review service, queries, UI integration, dashboard display, testing, documentation)
+  - 415/415 tests passing ✅
+  - **Key Features**:
+    - Personalized review intervals based on user performance
+    - Easiness Factor (1.3-2.5) determines interval growth rate
+    - Interval progression: 1d → 6d → exponential (up to 90+ days)
+    - Mastery level derived from EF for color-coded progress
+    - "Due for review" filtering optimizes study sessions
+    - Full test coverage of algorithm correctness and edge cases
 
 **Next Phases:**
-- Phase 8: Advanced Spaced Repetition (SM-2 algorithm)
 - Phase 9: Polish & Testing (refinements)
 - Phase 10: Deployment (Vercel setup)
+

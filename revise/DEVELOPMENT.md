@@ -166,6 +166,85 @@ git commit -m "docs: update README"
 git push origin main
 ```
 
+## SM-2 Architecture
+
+Revise implements the SuperMemo 2 (SM-2) spaced repetition algorithm for flashcard scheduling.
+
+### Core Components
+
+**1. SM-2 Calculator** (`src/lib/sm2Calculator.ts`)
+- Implements the SM-2 algorithm formula
+- Calculates next review interval, easiness factor, and repetitions
+- Quality enum: Again (0), Hard (1), Good (2), Easy (3)
+- Formula: `EF' = EF + (0.1 - (3 - q) * (0.08 + (3 - q) * 0.02))`
+- EF clamped to [1.3, 2.5]
+
+**2. Review Service** (`src/lib/reviewService.ts`)
+- Records flashcard reviews in database
+- Updates card metadata: EF, interval, repetitions, nextReviewDate
+- Derives mastery level from EF
+- Maintains review history (up to 100 dates per card)
+
+**3. Plan Queries** (`src/lib/planQueries.ts`)
+- `getFlashcardsDueForReview()`: Filters cards where nextReviewDate ≤ today
+- Used by Study Session to show only cards ready for review
+- Dashboard shows count of due cards per plan/topic
+
+**4. Mastery Calculator** (`src/lib/masteryCalculator.ts`)
+- Converts EF to MasteryLevel enum (Not Started, Learning, Familiar, Mastered)
+- EF < 1.8 = Learning, 1.8-2.1 = Familiar, > 2.1 = Mastered
+- Used for color-coding in UI and progress analytics
+
+### Data Model
+
+**Flashcard Schema** (extends base flashcard):
+```typescript
+{
+  easinessFactor: number;        // 1.3 - 2.5, default 2.5
+  interval: number;              // Days until next review
+  repetitions: number;           // Consecutive correct reviews
+  nextReviewDate: Date;          // When card is due
+  firstShownDate: Date;          // First review timestamp
+  reviewDates: Date[];           // Review history (max 100)
+}
+```
+
+### Review Flow
+
+1. User opens Study Session
+2. `getFlashcardsDueForReview()` fetches cards where nextReviewDate ≤ today
+3. User views flashcard and rates quality (0-3)
+4. `recordFlashcardReview()` calls `calculateSM2()` with current state
+5. SM-2 returns new EF, interval, repetitions
+6. Card updated in DB with new values + nextReviewDate = now + interval
+7. Dashboard reflects updated mastery level and due count
+
+### Interval Progression Example
+
+Rating "Good" (quality = 2) every time:
+- Review 1: 1 day
+- Review 2: 6 days
+- Review 3: 15 days (6 × 2.5)
+- Review 4: 37 days (15 × 2.5)
+- Review 5: 92 days (37 × 2.5)
+
+Rating "Again" resets repetitions to 0 and interval to 1 day.
+
+### Key Files
+
+- `src/lib/sm2Calculator.ts` - Algorithm implementation
+- `src/lib/reviewService.ts` - Database integration
+- `src/lib/planQueries.ts` - Due card filtering
+- `src/components/study-session/FlashcardDeck.tsx` - 4-button grading UI
+- `src/components/progress/TopicMasteryGrid.tsx` - Visual mastery display
+
+### Testing
+
+SM-2 is fully tested with 415+ tests:
+- `src/lib/__tests__/sm2Calculator.test.ts` - Algorithm correctness
+- `src/lib/__tests__/reviewService.test.ts` - Database updates
+- `src/components/study-session/__tests__/FlashcardDeck.test.tsx` - UI grading
+
 ## Deployment
 
 All commits to `main` branch auto-deploy to Vercel. To manually deploy:

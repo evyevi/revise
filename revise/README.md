@@ -104,6 +104,65 @@ Tests are configured in `vitest.setup.ts` and use:
 - `@testing-library/react` for component testing
 - `@testing-library/user-event` for user interaction testing
 
+## SM-2 Spaced Repetition
+
+Revise uses the **SuperMemo 2 (SM-2) algorithm** to optimize flashcard review timing and maximize long-term retention.
+
+### What is SM-2?
+
+SM-2 is a scientifically-proven spaced repetition algorithm that automatically schedules flashcard reviews based on how well you remember each card. Instead of reviewing all cards equally, SM-2 focuses your time on cards you're about to forget while spacing out cards you know well.
+
+**Key Benefits:**
+- **Efficient Learning**: Review cards just before forgetting them
+- **Long-term Retention**: Information moves to long-term memory through optimally-timed repetition
+- **Personalized Scheduling**: Each card has its own review schedule based on your performance
+- **Scientific Foundation**: Based on research into human memory and the forgetting curve
+
+### How It Works
+
+**1. Quality Ratings**: When you review a flashcard, you rate your recall using one of four buttons:
+- **Again (0)**: Forgot completely or wrong answer → Card returns in 1 day
+- **Hard (1)**: Struggled significantly → Card returns in 1 day
+- **Good (2)**: Recalled with some thought → Normal progression (1 day → 6 days → exponential growth)
+- **Easy (3)**: Instant, perfect recall → Faster progression with increased intervals
+
+**2. Easiness Factor (EF)**: A number between 1.3 and 2.5 representing how "easy" a card is for you:
+- Starts at 2.5 for new cards
+- Increases when you rate "Easy", decreases when you rate "Again" or "Hard"
+- Determines how quickly review intervals grow
+
+**3. Interval Scheduling**: The number of days until your next review:
+- New cards: 1 day
+- After second correct review: 6 days
+- After that: Previous interval × Easiness Factor
+- Can grow to 30, 60, 90+ days for well-known cards
+
+### Mastery Levels
+
+The Progress Dashboard shows mastery levels derived from your Easiness Factor:
+- 🟥 **Not Started** (grey): Never reviewed
+- 🟧 **Learning** (red/orange): EF < 1.8 - Difficult cards needing more practice
+- 🟨 **Familiar** (yellow): EF 1.8-2.1 - Moderate recall
+- 🟩 **Mastered** (green): EF > 2.1 - Strong, confident recall
+
+### Tips for Best Results
+
+**Be Honest**: The algorithm only works if you rate cards truthfully. Don't rate "Easy" just to see cards less often—you'll forget them.
+
+**Review Consistently**: Check your dashboard daily and review due cards. Consistency matters more than duration. Even 5 minutes daily beats 30 minutes once a week.
+
+**Trust Long Intervals**: Cards can reach 30-90+ day intervals. This is normal and optimal—don't manually review them early.
+
+**Use "Again" Freely**: Don't be afraid to reset a card. It's better to over-review than under-review.
+
+**Focus on Due Cards**: The dashboard shows which cards are "Due for review." Prioritize these for maximum retention with minimum time.
+
+### Learn More
+
+For a comprehensive guide to SM-2 and effective study strategies, see:
+- [SM-2 Spaced Repetition Guide](./docs/SM2_GUIDE.md) - Complete algorithm explanation and usage
+- [User Tips](./docs/USER_TIPS.md) - 30 actionable tips for effective learning
+
 ## Building for Production
 
 ### Build the Application

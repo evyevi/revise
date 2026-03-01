@@ -3,16 +3,49 @@ import { calculateSM2, deriveClampedMasteryLevel, DEFAULT_EF } from './sm2Calcul
 import type { Quality } from './sm2Calculator';
 import type { Flashcard } from '../types';
 
+/**
+ * Maximum number of review dates stored per flashcard.
+ * Keeps review history manageable while retaining sufficient data for analytics.
+ */
 const MAX_REVIEW_DATES = 100;
 
 /**
- * Record a flashcard review and update mastery level
+ * Record a flashcard review and update its SM-2 scheduling parameters.
  * 
- * Updates flashcard's masteryLevel, reviewDates, and firstShownDate.
- * Handles errors gracefully (logs but doesn't throw).
+ * This function is the central integration point between the SM-2 algorithm
+ * and the database. When a user reviews a flashcard and rates it, this function:
  * 
- * @param flashcardId - ID of the flashcard being reviewed
- * @param quality - SM-2 quality rating (0-3)
+ * 1. Retrieves the current card state from the database
+ * 2. Calls calculateSM2() to compute new scheduling parameters
+ * 3. Calculates the next review date based on the new interval
+ * 4. Derives a mastery level from the new easiness factor
+ * 5. Updates the card in the database with all new values
+ * 6. Tracks the review timestamp in the card's history
+ * 
+ * **Updated Fields:**
+ * - `masteryLevel`: Derived from easiness factor (0-5 scale)
+ * - `easinessFactor`: Updated by SM-2 algorithm (1.3-2.5)
+ * - `interval`: Days until next review
+ * - `repetitions`: Consecutive correct reviews count
+ * - `nextReviewDate`: Calculated as now + interval
+ * - `reviewDates`: Appends current timestamp (max 100 entries)
+ * - `firstShownDate`: Set on first review only
+ * 
+ * **Error Handling:**
+ * Errors are logged but not thrown, allowing graceful degradation.
+ * If the update fails, the user's study session continues without crashing.
+ * 
+ * @param flashcardId - Unique identifier of the flashcard being reviewed
+ * @param quality - User's quality rating (0=Again, 1=Hard, 2=Good, 3=Easy)
+ * 
+ * @returns Promise that resolves when the update completes (or fails gracefully)
+ * 
+ * @example
+ * // User rates a flashcard as "Good"
+ * await recordFlashcardReview('card-123', Quality.Good);
+ * 
+ * @see calculateSM2 for algorithm details
+ * @see Quality enum for rating definitions
  */
 export async function recordFlashcardReview(
   flashcardId: string,
