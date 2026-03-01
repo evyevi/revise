@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Progress } from '../Progress';
 import { db } from '../../lib/db';
@@ -172,8 +172,10 @@ describe('Progress page', () => {
       await waitFor(() => {
         expect(screen.getByText('Cards Due for Review')).toBeInTheDocument();
         // Should show 1 card due
-        const dueCards = screen.getByText('1');
-        expect(dueCards).toBeInTheDocument();
+        const dueCardsCard = screen.getByTestId('due-cards-card');
+        expect(dueCardsCard).toBeInTheDocument();
+        const cardsDueCount = screen.getByTestId('cards-due-count');
+        expect(cardsDueCount).toHaveTextContent('1');
       });
     });
 
@@ -196,8 +198,10 @@ describe('Progress page', () => {
       await waitFor(() => {
         expect(screen.getByText('Cards Due for Review')).toBeInTheDocument();
         // Should show 2 cards due (yesterday and twoDaysAgo)
-        expect(screen.getByText(/2/)).toBeInTheDocument();
-        expect(screen.getByText(/of 3/)).toBeInTheDocument();
+        const cardsDueCount = screen.getByTestId('cards-due-count');
+        expect(cardsDueCount).toHaveTextContent('2');
+        const dueCardsCard = screen.getByTestId('due-cards-card');
+        expect(dueCardsCard).toHaveTextContent('of 3');
       });
     });
 
@@ -216,12 +220,15 @@ describe('Progress page', () => {
 
       await waitFor(() => {
         expect(screen.getByText('SM-2 Statistics')).toBeInTheDocument();
-        expect(screen.getByText('Total Cards')).toBeInTheDocument();
-        expect(screen.getByText('3')).toBeInTheDocument(); // Total cards
+        const statsCard = screen.getByTestId('sm2-stats-card');
+        expect(statsCard).toBeInTheDocument();
+        
+        // Check total cards
+        const totalCardsItem = screen.getByTestId('stat-total-cards');
+        expect(totalCardsItem).toHaveTextContent('3');
         
         // Should show 2 legacy cards and 1 SM-2 card
-        const sm2CardsLabel = screen.getByText('SM-2 Cards');
-        expect(sm2CardsLabel).toBeInTheDocument();
+        expect(screen.getByText('SM-2 Cards')).toBeInTheDocument();
         expect(screen.getByText('Legacy Cards')).toBeInTheDocument();
       });
     });
@@ -263,12 +270,17 @@ describe('Progress page', () => {
       renderProgress();
 
       await waitFor(() => {
-        expect(screen.getByText('Mastery Distribution')).toBeInTheDocument();
-        expect(screen.getByText('Struggling')).toBeInTheDocument();
-        expect(screen.getByText('Learning')).toBeInTheDocument();
-        expect(screen.getByText('Familiar')).toBeInTheDocument();
-        expect(screen.getByText('Strong')).toBeInTheDocument();
-        expect(screen.getByText('Mastered')).toBeInTheDocument();
+        const masteryCard = screen.getByTestId('mastery-distribution-card');
+        expect(masteryCard).toBeInTheDocument();
+        
+        // Scope queries to the mastery distribution card only
+        const masteryCardQueries = within(masteryCard);
+        expect(masteryCardQueries.getByText('Mastery Distribution')).toBeInTheDocument();
+        expect(masteryCardQueries.getByText('Struggling')).toBeInTheDocument();
+        expect(masteryCardQueries.getByText('Learning')).toBeInTheDocument();
+        expect(masteryCardQueries.getByText('Familiar')).toBeInTheDocument();
+        expect(masteryCardQueries.getByText('Strong')).toBeInTheDocument();
+        expect(masteryCardQueries.getByText('Mastered')).toBeInTheDocument();
       });
     });
 
@@ -286,9 +298,14 @@ describe('Progress page', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Topic Mastery')).toBeInTheDocument();
+        const topicMasteryGrid = screen.getByTestId('topic-mastery-grid');
+        expect(topicMasteryGrid).toBeInTheDocument();
         expect(screen.getByText('Algebra')).toBeInTheDocument();
-        // Should show "Mastered" status
-        expect(screen.getByText('Mastered')).toBeInTheDocument();
+        
+        // Should show "Mastered" status within the topic mastery grid
+        const { getByText } = screen;
+        const masteredLabels = screen.getAllByText('Mastered');
+        expect(masteredLabels.length).toBeGreaterThan(0);
       });
     });
   });

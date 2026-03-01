@@ -31,7 +31,7 @@ export function MasteryDistributionCard({
   const maxCount = Math.max(...Object.values(distribution));
 
   return (
-    <div className="bg-white rounded-2xl p-6">
+    <div className="bg-white rounded-2xl p-6" data-testid="mastery-distribution-card">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Mastery Distribution</h3>
       
       <div className="space-y-3">
