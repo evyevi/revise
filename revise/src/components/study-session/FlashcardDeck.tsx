@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Flashcard } from '../../types';
 import { Quality } from '../../lib/sm2Calculator';
 
@@ -33,14 +33,20 @@ export function FlashcardDeck({
     if (onCardGraded) {
       onCardGraded(card.id, quality);
     }
+  };
 
-    // Auto-advance after feedback
-    setTimeout(() => {
+  // Auto-advance after feedback with proper cleanup
+  useEffect(() => {
+    if (showFeedback === null) return;
+    
+    const timer = setTimeout(() => {
       setShowFeedback(null);
       setIsFlipped(false);
       onNext();
     }, 300);
-  };
+    
+    return () => clearTimeout(timer);
+  }, [showFeedback, onNext]);
 
   if (cards.length === 0 || !card) {
     return (
