@@ -7,6 +7,7 @@ import {
   getPlanWithTopics,
   getCardsByTopicIds,
   getQuizzesByTopicIds,
+  getFlashcardsDueForReview,
 } from '../planQueries';
 import type { StudyPlan, StudyDay, Flashcard, QuizQuestion, Topic } from '../../types';
 
@@ -267,6 +268,110 @@ describe('planQueries', () => {
     it('returns empty array for empty topic IDs', async () => {
       const result = await getCardsByTopicIds([]);
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('getFlashcardsDueForReview', () => {
+    it('returns cards with nextReviewDate in the past', async () => {
+      const baseDate = new Date();
+      baseDate.setHours(12, 0, 0, 0);
+      const yesterday = new Date(baseDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const cards: Flashcard[] = [
+        {
+          id: 'card-1',
+          topicId: 'topic-1',
+          front: 'Past question',
+          back: 'Past answer',
+          reviewDates: [],
+          masteryLevel: 0,
+          nextReviewDate: yesterday,
+        },
+        {
+          id: 'card-2',
+          topicId: 'topic-1',
+          front: 'Future question',
+          back: 'Future answer',
+          reviewDates: [],
+          masteryLevel: 0,
+          nextReviewDate: new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+        },
+      ];
+
+      await db.flashcards.bulkAdd(cards);
+
+      const result = await getFlashcardsDueForReview(['card-1', 'card-2']);
+
+      expect(result.map((card) => card.id)).toEqual(['card-1']);
+    });
+
+    it('returns cards with no nextReviewDate (legacy cards)', async () => {
+      const card: Flashcard = {
+        id: 'card-legacy',
+        topicId: 'topic-1',
+        front: 'Legacy question',
+        back: 'Legacy answer',
+        reviewDates: [],
+        masteryLevel: 1,
+      };
+
+      await db.flashcards.add(card);
+
+      const result = await getFlashcardsDueForReview(['card-legacy']);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('card-legacy');
+    });
+
+    it('returns cards with nextReviewDate today', async () => {
+      const today = new Date();
+      today.setHours(9, 0, 0, 0);
+
+      const card: Flashcard = {
+        id: 'card-today',
+        topicId: 'topic-1',
+        front: 'Today question',
+        back: 'Today answer',
+        reviewDates: [],
+        masteryLevel: 2,
+        nextReviewDate: today,
+      };
+
+      await db.flashcards.add(card);
+
+      const result = await getFlashcardsDueForReview(['card-today']);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('card-today');
+    });
+
+    it('filters out cards with nextReviewDate in the future', async () => {
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      nextWeek.setHours(10, 0, 0, 0);
+
+      const card: Flashcard = {
+        id: 'card-future',
+        topicId: 'topic-1',
+        front: 'Future question',
+        back: 'Future answer',
+        reviewDates: [],
+        masteryLevel: 3,
+        nextReviewDate: nextWeek,
+      };
+
+      await db.flashcards.add(card);
+
+      const result = await getFlashcardsDueForReview(['card-future']);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns empty array for empty input', async () => {
+      const result = await getFlashcardsDueForReview([]);
+
+      expect(result).toEqual([]);
     });
   });
 
