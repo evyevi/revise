@@ -5,6 +5,8 @@ import {
   getPlanProgress,
   getTopicMasteryData,
   getRecentQuizScores,
+  getSM2Statistics,
+  type SM2Statistics,
 } from '../lib/progressService';
 import type { PlanProgressEntry } from '../components/progress/PlanProgressList';
 import type {
@@ -25,6 +27,7 @@ interface ProgressData {
   topicMastery: TopicMasteryEntry[];
   quizScores: QuizScoreEntry[];
   totalSessions: number;
+  sm2Stats: SM2Statistics;
 }
 
 const INITIAL_STATE: ProgressData = {
@@ -36,6 +39,28 @@ const INITIAL_STATE: ProgressData = {
   topicMastery: [],
   quizScores: [],
   totalSessions: 0,
+  sm2Stats: {
+    totalCards: 0,
+    sm2Cards: 0,
+    legacyCards: 0,
+    averageEF: 0,
+    cardsDue: 0,
+    intervalRanges: {
+      '1-6 days': 0,
+      '1-2 weeks': 0,
+      '2-4 weeks': 0,
+      '4+ weeks': 0,
+      'Not scheduled': 0,
+    },
+    masteryDistribution: {
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    },
+  },
 };
 
 export function useProgressData(): ProgressData {
@@ -79,6 +104,9 @@ export function useProgressData(): ProgressData {
       // Collect all topics across plans and compute mastery
       const allTopics = plans.flatMap((p) => p.topics);
 
+      // Calculate SM-2 statistics
+      const sm2Statistics = getSM2Statistics(allFlashcards);
+
       setState({
         isLoading: false,
         error: null,
@@ -88,6 +116,7 @@ export function useProgressData(): ProgressData {
         quizScores: getRecentQuizScores(allLogs, RECENT_QUIZ_LIMIT),
         planProgress: progress,
         topicMastery: getTopicMasteryData(allTopics, allFlashcards),
+        sm2Stats: sm2Statistics,
       });
     } catch (err) {
       setState((prev) => ({

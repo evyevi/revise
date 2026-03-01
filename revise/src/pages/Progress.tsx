@@ -6,6 +6,9 @@ import { TopicMasteryGrid } from '../components/progress/TopicMasteryGrid';
 import { StudyCalendar } from '../components/progress/StudyCalendar';
 import { QuizScoreChart } from '../components/progress/QuizScoreChart';
 import { BadgeShowcase } from '../components/progress/BadgeShowcase';
+import { DueCardsCard } from '../components/progress/DueCardsCard';
+import { SM2StatsCard } from '../components/progress/SM2StatsCard';
+import { MasteryDistributionCard } from '../components/progress/MasteryDistributionCard';
 import { useProgressData } from '../hooks/useProgressData';
 import { getAllBadges } from '../lib/badgeService';
 
@@ -19,6 +22,7 @@ export function Progress() {
     topicMastery,
     quizScores,
     totalSessions,
+    sm2Stats,
   } = useProgressData();
 
   if (isLoading) {
@@ -65,6 +69,15 @@ export function Progress() {
           <StudyCalendar activityDates={studyActivity} />
         </section>
 
+        {sm2Stats.totalCards > 0 && (
+          <section className="mb-6">
+            <DueCardsCard
+              cardsDue={sm2Stats.cardsDue}
+              totalCards={sm2Stats.totalCards}
+            />
+          </section>
+        )}
+
         <section className="mb-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-3">Plan Progress</h2>
           <PlanProgressList plans={planProgress} />
@@ -75,6 +88,21 @@ export function Progress() {
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Topic Mastery</h2>
             <TopicMasteryGrid topics={topicMastery} />
           </section>
+        )}
+
+        {sm2Stats.totalCards > 0 && (
+          <>
+            <section className="mb-6">
+              <SM2StatsCard stats={sm2Stats} />
+            </section>
+
+            <section className="mb-6">
+              <MasteryDistributionCard
+                distribution={sm2Stats.masteryDistribution}
+                totalCards={sm2Stats.totalCards}
+              />
+            </section>
+          </>
         )}
 
         <section className="mb-6">
