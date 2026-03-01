@@ -37,6 +37,11 @@ export interface Flashcard {
   reviewDates: Date[];
   masteryLevel: MasteryLevel;
   needsPractice?: boolean;
+  // SM-2 spaced repetition fields
+  easinessFactor?: number; // 1.3-2.5, default 2.5
+  interval?: number; // days until next review
+  repetitions?: number; // consecutive correct reviews
+  nextReviewDate?: Date; // when card should be reviewed next
 }
 
 export interface QuizQuestion {

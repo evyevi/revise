@@ -25,7 +25,7 @@ export class StudyPlannerDB extends Dexie {
     this.version(1).stores({
       studyPlans: 'id, testDate, createdDate',
       studyDays: 'id, planId, date, dayNumber, completed',
-      flashcards: 'id, topicId, firstShownDate',
+      flashcards: 'id, topicId, masteryLevel, nextReviewDate',
       quizQuestions: 'id, topicId',
       progressLogs: 'id, planId, dayId, completedAt',
       userStats: 'id',
