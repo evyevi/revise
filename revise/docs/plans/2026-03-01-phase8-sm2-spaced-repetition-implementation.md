@@ -1081,7 +1081,28 @@ git commit -m "feat(sm2): add getFlashcardsDueForReview scheduler
 
 ---
 
-## Task 5: Enhanced FlashcardDeck UI — 4-Button Grading
+## Task 5: Update Quiz Grading to Use SM-2 Quality
+
+**Files:**
+- Modify: `src/types/index.ts` (QuizAttempt interface)
+- Modify: `src/lib/__tests__/quizGrader.test.ts` (update tests)
+- Implement: Option to store Quality on quiz attempts for future use
+
+### Overview
+
+Extend quiz grading to derive SM-2 `Quality` from quiz answers (`correct` → `Quality.Good`, `incorrect` → `Quality.Again`), storing it on `QuizAttempt` for potential future use (e.g., updating related flashcards). Quiz score calculation remains unchanged.
+
+**Implementation Steps:**
+1. Add optional `quality?: Quality` field to `QuizAttempt` type
+2. Update quiz session logic to derive and store `Quality` on each attempt
+3. Update tests to verify quality assignment
+4. Commit
+
+**Test Requirements:** 4-5 tests verifying correct answers map to `Good`, incorrect to `Again`, and quiz score % is unaffected.
+
+---
+
+## Task 6: Enhanced FlashcardDeck UI — 4-Button Grading
 
 **Files:**
 - Modify: `src/components/study-session/FlashcardDeck.tsx:1-165`
@@ -1509,7 +1530,7 @@ git commit -m "feat(sm2): add 4-button quality grading to FlashcardDeck
 
 ---
 
-## Task 6: Integrate Card Scheduler with Study Session
+## Task 7: Integrate Card Scheduler with Study Session
 
 **Files:**
 - Modify: `src/hooks/useStudySession.ts` (use getFlashcardsDueForReview)
@@ -1635,7 +1656,7 @@ git commit -m "feat(sm2): filter flashcards by due date in study sessions
 
 ---
 
-## Task 7: Migration Utility Integration
+## Task 8: Migration Utility Integration
 
 **Files:**
 - Create: `src/lib/initializeSM2.ts` (run migration on app load)
@@ -1713,7 +1734,7 @@ git commit -m "feat(sm2): auto-migrate flashcards on app load
 
 ---
 
-## Task 8: Update Progress Dashboard for SM-2
+## Task 9: Update Progress Dashboard for SM-2
 
 **Files:**
 - Modify: `src/lib/progressService.ts` (ensure masteryLevel still used)
@@ -1771,7 +1792,7 @@ git commit -m "docs(sm2): add comment about masteryLevel compatibility
 
 ---
 
-## Task 9: Documentation & User Education
+## Task 10: Documentation & User Education
 
 **Files:**
 - Create: `docs/SM2_ALGORITHM.md` (explain SM-2 for developers)
