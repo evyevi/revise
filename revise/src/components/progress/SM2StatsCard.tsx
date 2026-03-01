@@ -18,7 +18,7 @@ export function SM2StatsCard({ stats }: SM2StatsCardProps) {
   const efDisplay = stats.averageEF > 0 ? stats.averageEF.toFixed(2) : 'N/A';
 
   return (
-    <div className="bg-white rounded-2xl p-6">
+    <div className="bg-white rounded-2xl p-6" data-testid="sm2-stats-card">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">SM-2 Statistics</h3>
       
       <div className="space-y-4">
@@ -85,8 +85,9 @@ interface StatItemProps {
 }
 
 function StatItem({ label, value, color = 'text-gray-800' }: StatItemProps) {
+  const testId = label.toLowerCase().replace(/\s+/g, '-');
   return (
-    <div className="bg-gray-50 rounded-lg p-3">
+    <div className="bg-gray-50 rounded-lg p-3" data-testid={`stat-${testId}`}>
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
       <div className="text-xs text-gray-500 mt-0.5">{label}</div>
     </div>

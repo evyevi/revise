@@ -34,7 +34,7 @@ export function TopicMasteryGrid({ topics }: TopicMasteryGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3" data-testid="topic-mastery-grid">
       {topics.map((topic, index) => {
         const level = Math.round(Math.min(5, Math.max(0, topic.averageMastery)));
         const label = MASTERY_LABELS[level] ?? 'New';

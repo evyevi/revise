@@ -35,6 +35,7 @@ export function DueCardsCard({ cardsDue, totalCards }: DueCardsCardProps) {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3 }}
       className={`bg-gradient-to-br ${getStatusColor()} rounded-2xl p-6 shadow-sm`}
+      data-testid="due-cards-card"
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-800">Cards Due for Review</h3>
@@ -42,7 +43,7 @@ export function DueCardsCard({ cardsDue, totalCards }: DueCardsCardProps) {
       </div>
       
       <div className="flex items-baseline gap-2 mb-2">
-        <span className="text-4xl font-bold text-gray-900">{cardsDue}</span>
+        <span className="text-4xl font-bold text-gray-900" data-testid="cards-due-count">{cardsDue}</span>
         <span className="text-lg text-gray-600">of {totalCards}</span>
       </div>
 
