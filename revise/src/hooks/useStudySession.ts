@@ -7,6 +7,7 @@ import {
 } from '../lib/planQueries';
 import { recordFlashcardReview } from '../lib/reviewService';
 import { calculateQuizScore, saveQuizResults } from '../lib/quizGrader';
+import type { Quality } from '../lib/sm2Calculator';
 import type { StudyDay, Flashcard, QuizQuestion, QuizAttempt } from '../types';
 
 export interface SessionState {
@@ -211,9 +212,8 @@ export function useStudySession(planId: string) {
     dispatch({ type: 'PREV_FLASHCARD' });
   }, []);
 
-  const gradeFlashcard = useCallback(async (cardId: string, correct: boolean) => {
-    // Call ReviewService to update mastery
-    await recordFlashcardReview(cardId, correct);
+  const gradeFlashcard = useCallback(async (cardId: string, quality: Quality) => {
+    await recordFlashcardReview(cardId, quality);
     
     // Update count in state
     dispatch({ type: 'INCREMENT_FLASHCARDS_REVIEWED' });
