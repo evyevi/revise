@@ -38,11 +38,13 @@ const MAX_REVIEW_DATES = 100;
  * @param flashcardId - Unique identifier of the flashcard being reviewed
  * @param quality - User's quality rating (0=Again, 1=Hard, 2=Good, 3=Easy)
  * 
- * @returns Promise that resolves when the update completes (or fails gracefully)
+ * @returns Promise resolving to `{ success: true }` on success, or
+ *   `{ success: false, error: string }` on failure (never throws)
  * 
  * @example
  * // User rates a flashcard as "Good"
- * await recordFlashcardReview('card-123', Quality.Good);
+ * const result = await recordFlashcardReview('card-123', Quality.Good);
+ * if (!result.success) console.warn(result.error);
  * 
  * @see calculateSM2 for algorithm details
  * @see Quality enum for rating definitions
@@ -50,13 +52,13 @@ const MAX_REVIEW_DATES = 100;
 export async function recordFlashcardReview(
   flashcardId: string,
   quality: Quality
-): Promise<void> {
+): Promise<{ success: boolean; error?: string }> {
   try {
     const card = await db.flashcards.get(flashcardId);
     
     if (!card) {
       console.error(`Flashcard ${flashcardId} not found`);
-      return;
+      return { success: false, error: `Flashcard ${flashcardId} not found` };
     }
 
     const now = new Date();
@@ -97,8 +99,10 @@ export async function recordFlashcardReview(
     }
 
     await db.flashcards.update(flashcardId, updates);
+    return { success: true };
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Failed to record flashcard review:', error);
-    // Don't throw - graceful degradation
+    return { success: false, error: message };
   }
 }

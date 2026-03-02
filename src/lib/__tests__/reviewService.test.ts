@@ -220,7 +220,8 @@ describe('recordFlashcardReview', () => {
   it('handles missing flashcard gracefully', async () => {
     vi.mocked(db.flashcards.get).mockResolvedValue(undefined);
 
-    await expect(recordFlashcardReview('missing-card', Quality.Good)).resolves.toBeUndefined();
+    const result = await recordFlashcardReview('missing-card', Quality.Good);
+    expect(result).toEqual({ success: false, error: 'Flashcard missing-card not found' });
 
     expect(db.flashcards.update).not.toHaveBeenCalled();
   });

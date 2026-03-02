@@ -218,24 +218,8 @@ export function useCreatePlan() {
   }, [state.testDate]);
 
   const isStepValid = useCallback((step: number): boolean => {
-    switch (step) {
-      case 1: // Upload step
-        return state.extractedText.length > 0;
-      case 2: // Test date step
-        return state.testDate !== null && daysAvailable > 0;
-      case 3: // Minutes step
-        return (
-          state.minutesPerDay !== null ||
-          state.recommendedMinutesPerDay !== null
-        );
-      case 4: // Generate step
-        return state.plan !== null;
-      case 5: // Review step
-        return state.plan !== null;
-      default:
-        return false;
-    }
-  }, [state.extractedText, state.testDate, state.minutesPerDay, state.recommendedMinutesPerDay, state.plan, daysAvailable]);
+    return isStepValidInState(state, step);
+  }, [state]);
 
   const canProceed = useMemo(() => {
     return isStepValid(state.step);

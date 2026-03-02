@@ -215,9 +215,12 @@ export function useStudySession(planId: string) {
   }, []);
 
   const gradeFlashcard = useCallback(async (cardId: string, quality: Quality) => {
-    await recordFlashcardReview(cardId, quality);
+    const result = await recordFlashcardReview(cardId, quality);
+    if (!result.success) {
+      console.warn('Flashcard review not saved:', result.error);
+    }
     
-    // Update count in state
+    // Update count in state regardless — don't block the session
     dispatch({ type: 'INCREMENT_FLASHCARDS_REVIEWED' });
   }, []);
 
