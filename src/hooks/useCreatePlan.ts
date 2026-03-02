@@ -48,8 +48,6 @@ function transformToStudyDays(
     completed: false,
     newTopicIds: day.newTopicIds,
     reviewTopicIds: day.reviewTopicIds,
-    flashcardIds: [],
-    quizIds: [],
     estimatedMinutes: day.estimatedMinutes,
   }));
 }

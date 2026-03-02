@@ -36,8 +36,6 @@ describe('planQueries', () => {
         completed: false,
         newTopicIds: ['topic-1'],
         reviewTopicIds: [],
-        flashcardIds: [],
-        quizIds: [],
         estimatedMinutes: 30,
       };
 
@@ -52,8 +50,6 @@ describe('planQueries', () => {
         completed: true,
         newTopicIds: [],
         reviewTopicIds: [],
-        flashcardIds: [],
-        quizIds: [],
         estimatedMinutes: 30,
       };
 
@@ -81,8 +77,6 @@ describe('planQueries', () => {
         completed: true,
         newTopicIds: [],
         reviewTopicIds: [],
-        flashcardIds: [],
-        quizIds: [],
         estimatedMinutes: 30,
       };
 
@@ -109,8 +103,6 @@ describe('planQueries', () => {
         completed: false,
         newTopicIds: ['topic-1', 'topic-2'],
         reviewTopicIds: ['topic-3'],
-        flashcardIds: ['card-1'],
-        quizIds: ['quiz-1'],
         estimatedMinutes: 45,
       };
 
@@ -165,8 +157,6 @@ describe('planQueries', () => {
         completed: false,
         newTopicIds: ['topic-1'],
         reviewTopicIds: [],
-        flashcardIds: [],
-        quizIds: [],
         estimatedMinutes: 30,
       };
 
@@ -178,8 +168,6 @@ describe('planQueries', () => {
         completed: false,
         newTopicIds: ['topic-2'],
         reviewTopicIds: [],
-        flashcardIds: [],
-        quizIds: [],
         estimatedMinutes: 30,
       };
 

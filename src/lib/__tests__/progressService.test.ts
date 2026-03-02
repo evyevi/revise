@@ -31,8 +31,6 @@ function makeStudyDay(overrides: Partial<StudyDay> = {}): StudyDay {
     completed: false,
     newTopicIds: [],
     reviewTopicIds: [],
-    flashcardIds: [],
-    quizIds: [],
     estimatedMinutes: 30,
     ...overrides,
   };

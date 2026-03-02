@@ -50,12 +50,12 @@ describe('useProgressData', () => {
     const day1: StudyDay = {
       id: 'd1', planId: 'plan-1', dayNumber: 1, date: new Date('2026-02-10'),
       completed: true, newTopicIds: [], reviewTopicIds: [],
-      flashcardIds: [], quizIds: [], estimatedMinutes: 30,
+      estimatedMinutes: 30,
     };
     const day2: StudyDay = {
       id: 'd2', planId: 'plan-1', dayNumber: 2, date: new Date('2026-02-11'),
       completed: false, newTopicIds: [], reviewTopicIds: [],
-      flashcardIds: [], quizIds: [], estimatedMinutes: 30,
+      estimatedMinutes: 30,
     };
     await db.studyDays.bulkAdd([day1, day2]);
 

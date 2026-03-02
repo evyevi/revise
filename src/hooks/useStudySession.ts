@@ -6,7 +6,9 @@ import {
   getQuizzesByTopicIds,
 } from '../lib/planQueries';
 import { recordFlashcardReview } from '../lib/reviewService';
-import { calculateQuizScore, saveQuizResults } from '../lib/quizGrader';
+import { saveQuizResults } from '../lib/quizGrader';
+import { calculateTotalSessionXP, type SessionXPContext } from '../lib/xpService';
+import { getUserStats, updateUserStatsOnSessionComplete } from '../lib/db';
 import { Quality } from '../lib/sm2Calculator';
 import type { StudyDay, Flashcard, QuizQuestion, QuizAttempt } from '../types';
 
@@ -249,9 +251,23 @@ export function useStudySession(planId: string) {
     if (!state.studyDay) return;
 
     try {
-      // Calculate XP: (quiz score / 10) + (cards reviewed * 2)
-      const quizScore = calculateQuizScore(state.quizAttempts);
-      const xpEarned = Math.floor(quizScore / 10) + (state.flashcardsReviewed * 2);
+      // Calculate XP using proper xpService formula
+      const correctAnswers = state.quizAttempts.filter(a => a.correct).length;
+      const totalQuestions = state.quizAttempts.length;
+      const isPerfect = totalQuestions > 0 && correctAnswers === totalQuestions;
+      const carddeckCompleted = state.flashcardsReviewed > 0 && state.currentFlashcardIndex >= state.flashcards.length - 1;
+
+      // Get current streak for bonus calculation
+      const userStats = await getUserStats();
+
+      const xpContext: SessionXPContext = {
+        baseSession: true,
+        correctAnswers,
+        carddeckCompleted,
+        perfectQuiz: isPerfect,
+        currentStreak: userStats.currentStreak,
+      };
+      const xpEarned = calculateTotalSessionXP(xpContext);
 
       // Save quiz results - CRITICAL, must not fail silently
       await saveQuizResults(
@@ -272,18 +288,13 @@ export function useStudySession(planId: string) {
         // Don't fail - non-critical
       }
 
-      // Update user stats (non-critical)
+      // Update user stats (non-critical) - handles XP, streak, badges
       try {
-        const stats = await db.userStats.get('default');
-        if (stats) {
-          await db.userStats.update('default', {
-            totalXP: stats.totalXP + xpEarned,
-            lastStudyDate: new Date(),
-          });
-        }
+        await updateUserStatsOnSessionComplete({
+          xpEarned,
+        });
       } catch (statsError) {
         console.error('Warning: Could not update stats:', statsError);
-        // Don't fail - non-critical
       }
 
       dispatch({ type: 'COMPLETE_SESSION', payload: xpEarned });
@@ -292,7 +303,7 @@ export function useStudySession(planId: string) {
       // THROW - this is critical, user needs to know
       throw error;
     }
-  }, [state.studyDay, state.quizAttempts, state.flashcardsReviewed]);
+  }, [state.studyDay, state.quizAttempts, state.flashcardsReviewed, state.currentFlashcardIndex, state.flashcards.length]);
 
   return {
     ...state,
