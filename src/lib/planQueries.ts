@@ -4,15 +4,17 @@ import type { Flashcard, StudyDay } from '../types';
 export async function getTodayStudyDay(planId: string): Promise<StudyDay | undefined> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const todayStr = today.toDateString();
 
   const days = await db.studyDays
     .where('planId')
     .equals(planId)
     .toArray();
 
-  return days.find(
-    (d) => d.date.toDateString() === today.toDateString()
-  );
+  return days.find((d) => {
+    const date = d.date instanceof Date ? d.date : new Date(d.date);
+    return date.toDateString() === todayStr;
+  });
 }
 
 export async function getStudyDayById(dayId: string): Promise<StudyDay | undefined> {
