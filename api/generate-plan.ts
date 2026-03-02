@@ -85,7 +85,8 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  // Enable CORS
+  // TODO: SECURITY REVIEW - Restrict CORS to production domain(s) before deployment
+  // Currently allows all origins which is acceptable for development but not production
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
@@ -102,6 +103,9 @@ export default async function handler(
     res.status(405).json({ error: 'Method not allowed. Use POST.' });
     return;
   }
+
+  // TODO: SECURITY REVIEW - Implement rate limiting to prevent API abuse
+  // Consider using Vercel Edge Middleware or @upstash/ratelimit
 
   // Validate API key
   const apiKey = process.env.GEMINI_API_KEY;
@@ -239,6 +243,9 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
     if (planData.recommendedMinutesPerDay < MIN_MINUTES_PER_DAY || planData.recommendedMinutesPerDay > MAX_MINUTES_PER_DAY) {
       throw new Error(`recommendedMinutesPerDay out of range: must be ${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY}`);
     }
+
+    // TODO: SECURITY REVIEW - Consider sanitizing AI-generated text content
+    // (flashcard front/back, quiz questions/options) to prevent content injection
 
     res.status(200).json(planData);
   } catch (error) {
