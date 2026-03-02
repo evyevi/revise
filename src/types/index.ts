@@ -25,8 +25,6 @@ export interface StudyDay {
   completed: boolean;
   newTopicIds: string[];
   reviewTopicIds: string[];
-  flashcardIds: string[];
-  quizIds: string[];
   estimatedMinutes: number;
 }
 

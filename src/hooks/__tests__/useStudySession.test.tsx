@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useStudySession } from '../useStudySession';
-import { db } from '../../lib/db';
+import { db, getUserStats, updateUserStatsOnSessionComplete } from '../../lib/db';
 import * as planQueries from '../../lib/planQueries';
 import * as quizGrader from '../../lib/quizGrader';
 import * as reviewService from '../../lib/reviewService';
@@ -25,6 +25,8 @@ vi.mock('../../lib/db', () => ({
       add: vi.fn(),
     },
   },
+  getUserStats: vi.fn(),
+  updateUserStatsOnSessionComplete: vi.fn(),
 }));
 
 vi.mock('../../lib/planQueries', () => ({
@@ -53,8 +55,6 @@ describe('useStudySession', () => {
     completed: false,
     newTopicIds: ['topic-1', 'topic-2'],
     reviewTopicIds: ['topic-3'],
-    flashcardIds: [],
-    quizIds: [],
     estimatedMinutes: 30,
   };
 
@@ -121,6 +121,22 @@ describe('useStudySession', () => {
       flashcardsReviewed: 0,
     });
     vi.mocked(reviewService.recordFlashcardReview).mockResolvedValue(undefined);
+    vi.mocked(getUserStats).mockResolvedValue({
+      id: 'default',
+      totalXP: 100,
+      currentStreak: 5,
+      longestStreak: 10,
+      badges: [],
+      lastStudyDate: new Date(),
+    });
+    vi.mocked(updateUserStatsOnSessionComplete).mockResolvedValue({
+      id: 'default',
+      totalXP: 150,
+      currentStreak: 6,
+      longestStreak: 10,
+      badges: [],
+      lastStudyDate: new Date(),
+    });
   });
 
   it('should initialize with loading state', async () => {
@@ -281,16 +297,6 @@ describe('useStudySession', () => {
   });
 
   it('should complete session and update database', async () => {
-    const mockUserStats = {
-      id: 'default',
-      totalXP: 100,
-      currentStreak: 5,
-      longestStreak: 10,
-      badges: [],
-    };
-
-    vi.mocked(db.userStats.get).mockResolvedValue(mockUserStats);
-
     const { result } = renderHook(() => useStudySession(mockPlanId));
 
     await waitFor(() => {
@@ -309,14 +315,14 @@ describe('useStudySession', () => {
       completed: true,
     });
 
-    expect(db.userStats.update).toHaveBeenCalledWith('default', {
-      totalXP: expect.any(Number),
-      lastStudyDate: expect.any(Date),
+    // Should use updateUserStatsOnSessionComplete instead of manual db.userStats.update
+    expect(updateUserStatsOnSessionComplete).toHaveBeenCalledWith({
+      xpEarned: expect.any(Number),
     });
   });
 
-  it('should handle completing session without user stats', async () => {
-    vi.mocked(db.userStats.get).mockResolvedValue(undefined);
+  it('should handle completing session even if stats update fails', async () => {
+    vi.mocked(updateUserStatsOnSessionComplete).mockRejectedValueOnce(new Error('stats error'));
 
     const { result } = renderHook(() => useStudySession(mockPlanId));
 
@@ -331,22 +337,11 @@ describe('useStudySession', () => {
     expect(result.current.step).toBe('completion');
     expect(result.current.xpEarned).toBeGreaterThanOrEqual(0);
     
-    // Should update day but not crash on missing stats
+    // Should update day and not crash on stats error
     expect(db.studyDays.update).toHaveBeenCalled();
-    expect(db.userStats.update).not.toHaveBeenCalled();
   });
 
   it('should handle database errors when completing session', async () => {
-    const mockUserStats = {
-      id: 'default',
-      totalXP: 100,
-      currentStreak: 5,
-      longestStreak: 10,
-      badges: [],
-    };
-
-    vi.mocked(db.userStats.get).mockResolvedValue(mockUserStats);
-    
     // Mock saveQuizResults to throw (critical error)
     vi.mocked(quizGrader.saveQuizResults).mockRejectedValueOnce(new Error('Failed to save quiz'));
 

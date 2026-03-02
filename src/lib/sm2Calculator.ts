@@ -20,12 +20,13 @@ import type { MasteryLevel } from '../types';
  * 
  * @see calculateSM2 for how quality affects scheduling
  */
-export enum Quality {
-  Again = 0, // Complete blackout, wrong answer
-  Hard = 1,  // Incorrect response, but correct one remembered
-  Good = 2,  // Correct response with some effort
-  Easy = 3,  // Perfect response, immediate recall
-}
+export const Quality = {
+  Again: 0, // Complete blackout, wrong answer
+  Hard: 1,  // Incorrect response, but correct one remembered
+  Good: 2,  // Correct response with some effort
+  Easy: 3,  // Perfect response, immediate recall
+} as const;
+export type Quality = (typeof Quality)[keyof typeof Quality];
 
 export interface SM2Input {
   quality: Quality;

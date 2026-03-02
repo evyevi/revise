@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import type { StudyActivityEntry } from '../../lib/progressService';
 
@@ -25,7 +26,7 @@ export function StudyCalendar({ activityDates, currentDate }: StudyCalendarProps
   const isToday = (day: number) =>
     year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
 
-  const cells: JSX.Element[] = [];
+  const cells: ReactElement[] = [];
 
   // Empty padding cells
   for (let i = 0; i < startDayOfWeek; i++) {

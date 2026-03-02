@@ -210,8 +210,6 @@ describe('useCreatePlan', () => {
       completed: false,
       newTopicIds: ['t1'],
       reviewTopicIds: [],
-      flashcardIds: [],
-      quizIds: [],
       estimatedMinutes: 30,
     });
     expect(result[0].id).toBeTruthy();
