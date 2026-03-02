@@ -172,19 +172,25 @@ StudyDay {
   completed: boolean
   newTopicIds: string[]
   reviewTopicIds: string[]
-  flashcardIds: string[]
-  quizIds: string[]
   estimatedMinutes: number
 }
+// Note: Flashcards and quizzes are retrieved via topicId
+// (through StudyDay.newTopicIds/reviewTopicIds), not stored
+// directly on the day. This avoids data duplication.
 
 Flashcard {
   id: string
-  topicId: string
-  front: string  // question
-  back: string   // answer
+  topicId: string  // scoped to plan via Topic → StudyPlan
+  front: string    // question
+  back: string     // answer
   firstShownDate: Date
   reviewDates: Date[]
   masteryLevel: number
+  // SM-2 spaced repetition fields
+  easinessFactor?: number   // 1.3-2.5, default 2.5
+  interval?: number         // days until next review
+  repetitions?: number      // consecutive correct reviews
+  nextReviewDate?: Date     // when card should be reviewed next
 }
 
 QuizQuestion {
