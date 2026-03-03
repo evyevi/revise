@@ -149,7 +149,14 @@ npx tsc --noEmit
 
 # Format
 npx eslint . --fix
+
+# Security audit
+npm audit
+npm ls @vercel/node
 ```
+Note:
+The vulnerabilities are in devDependencies only - they affect the local build tooling (@vercel/static-config, @vercel/build-utils), not your production code. The vulnerable packages (ajv, minimatch, path-to-regexp, undici) are transitive deps used during the build process, not shipped to users.Wait for @vercel/node to release a patched version that fixes the transitive deps
+Monitor with npm audit periodically
 
 ## Committing Changes
 
