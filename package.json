@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "dexie": "^3.2.4",
+    "dexie": "^4.3.0",
     "dexie-react-hooks": "^1.1.6",
     "framer-motion": "^12.35.0",
     "pdfjs-dist": "^5.4.624",
