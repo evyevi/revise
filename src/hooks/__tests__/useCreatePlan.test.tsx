@@ -11,6 +11,7 @@ import {
 } from '../useCreatePlan';
 import { generateStudyPlan } from '../../lib/api';
 import type { PlanResponse } from '../../lib/api';
+import type { Flashcard, StudyDay } from '../../types';
 import { db } from '../../lib/db';
 
 vi.mock('../../lib/api', () => ({
@@ -400,5 +401,89 @@ describe('useCreatePlan', () => {
     
     expect(result.current.error).toBeTruthy();
     expect(result.current.isSaving).toBe(false);
+  });
+
+  test('savePlan remaps AI topic IDs to unique UUIDs so two plans with identical AI topic IDs never share flashcard topicIds', async () => {
+    const mockTransaction = vi.fn().mockImplementation(async (_mode, _tables, callback: () => Promise<void>) => {
+      await callback();
+    });
+    (db.transaction as ReturnType<typeof vi.fn>) = mockTransaction;
+    (db.studyPlans.add as ReturnType<typeof vi.fn>).mockResolvedValue('plan-id');
+    (db.studyDays.bulkAdd as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (db.quizQuestions.bulkAdd as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (db.uploadedFiles.bulkAdd as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    // --- Plan A ---
+    const { result: hookA } = renderHook(() => useCreatePlan());
+    act(() => {
+      hookA.current.setExtractedText('Biology content');
+      hookA.current.setTestDate(new Date('2026-03-10'));
+    });
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [{ id: 'topic-1', name: 'Biology', importance: 'high', keyPoints: [], estimatedMinutes: 30 }],
+      schedule: [{ dayNumber: 1, newTopicIds: ['topic-1'], reviewTopicIds: [], estimatedMinutes: 30 }],
+      flashcards: [{ topicId: 'topic-1', front: 'Q Bio', back: 'A Bio' }],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    });
+    await act(async () => { await hookA.current.generatePlan(); });
+
+    let flashcardsA: Flashcard[] = [];
+    let studyDaysA: StudyDay[] = [];
+    (db.flashcards.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((cards: Flashcard[]) => {
+      flashcardsA = cards;
+      return Promise.resolve(undefined);
+    });
+    (db.studyDays.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((days: StudyDay[]) => {
+      studyDaysA = days;
+      return Promise.resolve(undefined);
+    });
+    await act(async () => { await hookA.current.savePlan([]); });
+
+    // --- Plan B with the SAME AI-generated topic ID "topic-1" ---
+    const { result: hookB } = renderHook(() => useCreatePlan());
+    act(() => {
+      hookB.current.setExtractedText('Chemistry content');
+      hookB.current.setTestDate(new Date('2026-03-10'));
+    });
+    vi.mocked(generateStudyPlan).mockResolvedValueOnce({
+      topics: [{ id: 'topic-1', name: 'Chemistry', importance: 'high', keyPoints: [], estimatedMinutes: 30 }],
+      schedule: [{ dayNumber: 1, newTopicIds: ['topic-1'], reviewTopicIds: [], estimatedMinutes: 30 }],
+      flashcards: [{ topicId: 'topic-1', front: 'Q Chem', back: 'A Chem' }],
+      quizQuestions: [],
+      recommendedMinutesPerDay: 30,
+    });
+    await act(async () => { await hookB.current.generatePlan(); });
+
+    let flashcardsB: Flashcard[] = [];
+    let studyDaysB: StudyDay[] = [];
+    (db.flashcards.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((cards: Flashcard[]) => {
+      flashcardsB = cards;
+      return Promise.resolve(undefined);
+    });
+    (db.studyDays.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((days: StudyDay[]) => {
+      studyDaysB = days;
+      return Promise.resolve(undefined);
+    });
+    await act(async () => { await hookB.current.savePlan([]); });
+
+    // Raw AI ID must never appear in saved data
+    expect(flashcardsA.map(c => c.topicId)).not.toContain('topic-1');
+    expect(flashcardsB.map(c => c.topicId)).not.toContain('topic-1');
+
+    // The two plans must have no overlapping topicIds
+    const topicIdsA = new Set(flashcardsA.map(c => c.topicId));
+    const topicIdsB = new Set(flashcardsB.map(c => c.topicId));
+    for (const id of topicIdsA) {
+      expect(topicIdsB.has(id)).toBe(false);
+    }
+
+    // StudyDays must also reference the remapped (not raw AI) topic IDs
+    const allDayTopicIdsA = studyDaysA.flatMap(d => [...d.newTopicIds, ...d.reviewTopicIds]);
+    expect(allDayTopicIdsA).not.toContain('topic-1');
+    // The topicIds referenced in study days must match the saved flashcard topicIds
+    for (const id of allDayTopicIdsA) {
+      expect(topicIdsA.has(id)).toBe(true);
+    }
   });
 });

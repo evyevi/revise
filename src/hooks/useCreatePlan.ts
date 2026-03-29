@@ -315,17 +315,41 @@ export function useCreatePlan() {
         const createdDate = new Date();
         const minutesPerDay = state.minutesPerDay || state.recommendedMinutesPerDay || 30;
 
+        // Remap AI-generated topic IDs to plan-unique UUIDs.
+        // The AI consistently produces simple IDs like "topic-1" across all plans,
+        // which would cause getCardsByTopicIds to return flashcards from other plans.
+        const topicIdMap = new Map(
+          state.plan.topics.map((t) => [t.id, crypto.randomUUID()])
+        );
+        const remappedPlan: PlanResponse = {
+          ...state.plan,
+          topics: state.plan.topics.map((t) => ({ ...t, id: topicIdMap.get(t.id)! })),
+          schedule: state.plan.schedule.map((day) => ({
+            ...day,
+            newTopicIds: day.newTopicIds.map((id) => topicIdMap.get(id) ?? id),
+            reviewTopicIds: day.reviewTopicIds.map((id) => topicIdMap.get(id) ?? id),
+          })),
+          flashcards: state.plan.flashcards.map((card) => ({
+            ...card,
+            topicId: topicIdMap.get(card.topicId) ?? card.topicId,
+          })),
+          quizQuestions: state.plan.quizQuestions.map((q) => ({
+            ...q,
+            topicId: topicIdMap.get(q.topicId) ?? q.topicId,
+          })),
+        };
+
         // Transform data
         const studyPlan = transformToStudyPlan(
-          state.plan,
+          remappedPlan,
           state.testDate,
           createdDate,
           daysAvailable,
           minutesPerDay
         );
-        const studyDays = transformToStudyDays(state.plan.schedule, studyPlan.id, createdDate);
-        const flashcards = transformToFlashcards(state.plan.flashcards);
-        const quizQuestions = transformToQuizQuestions(state.plan.quizQuestions);
+        const studyDays = transformToStudyDays(remappedPlan.schedule, studyPlan.id, createdDate);
+        const flashcards = transformToFlashcards(remappedPlan.flashcards);
+        const quizQuestions = transformToQuizQuestions(remappedPlan.quizQuestions);
         const uploadedFiles = transformToUploadedFiles(files, studyPlan.id, state.extractedText);
 
         // Save to database in transaction
