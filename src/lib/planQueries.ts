@@ -48,6 +48,37 @@ export async function getQuizzesByTopicIds(topicIds: string[]) {
   return quizzes;
 }
 
+export async function deleteStudyPlanAndContent(planId: string): Promise<void> {
+  await db.transaction(
+    'rw',
+    db.studyPlans,
+    db.studyDays,
+    db.flashcards,
+    db.quizQuestions,
+    db.progressLogs,
+    db.uploadedFiles,
+    async () => {
+      const plan = await db.studyPlans.get(planId);
+      if (!plan) {
+        throw new Error('Study plan not found');
+      }
+
+      const topicIds = plan.topics.map((topic) => topic.id);
+
+      await db.studyDays.where('planId').equals(planId).delete();
+      await db.progressLogs.where('planId').equals(planId).delete();
+      await db.uploadedFiles.where('planId').equals(planId).delete();
+
+      if (topicIds.length > 0) {
+        await db.flashcards.where('topicId').anyOf(topicIds).delete();
+        await db.quizQuestions.where('topicId').anyOf(topicIds).delete();
+      }
+
+      await db.studyPlans.delete(planId);
+    }
+  );
+}
+
 /**
  * Get flashcards that are due for review according to SM-2 scheduling.
  * 

@@ -5,6 +5,7 @@ import { StudyDashboard } from '../components/StudyDashboard';
 import { PlanCard } from '../components/PlanCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { db, getUserStats } from '../lib/db';
+import { deleteStudyPlanAndContent } from '../lib/planQueries';
 import type { StudyPlan } from '../types';
 
 export function Home() {
@@ -114,6 +115,14 @@ export function Home() {
     void loadData();
   }, [loadData]);
 
+  const handleDeletePlan = useCallback(
+    async (planId: string) => {
+      await deleteStudyPlanAndContent(planId);
+      await loadData();
+    },
+    [loadData]
+  );
+
   if (isLoading) {
     return (
       <Layout>
@@ -194,6 +203,7 @@ export function Home() {
               plan={plan}
               daysCompleted={dayProgress.get(plan.id) || 0}
               todayCompleted={todayCompleted.has(plan.id)}
+              onDelete={handleDeletePlan}
             />
           ))}
         </div>

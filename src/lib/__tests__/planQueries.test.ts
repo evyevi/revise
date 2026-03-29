@@ -8,6 +8,7 @@ import {
   getCardsByTopicIds,
   getQuizzesByTopicIds,
   getFlashcardsDueForReview,
+  deleteStudyPlanAndContent,
 } from '../planQueries';
 import type { StudyPlan, StudyDay, Flashcard, QuizQuestion, Topic } from '../../types';
 
@@ -428,6 +429,98 @@ describe('planQueries', () => {
     it('returns empty array for empty topic IDs', async () => {
       const result = await getQuizzesByTopicIds([]);
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('deleteStudyPlanAndContent', () => {
+    it('deletes a plan and all related plan/topic records', async () => {
+      const plan: StudyPlan = {
+        id: 'plan-delete-1',
+        subject: 'Chemistry',
+        testDate: new Date('2026-05-01'),
+        createdDate: new Date('2026-03-01'),
+        totalDays: 12,
+        suggestedMinutesPerDay: 25,
+        topics: [
+          {
+            id: 'topic-del-1',
+            name: 'Stoichiometry',
+            importance: 'high',
+            keyPoints: ['Moles'],
+          },
+          {
+            id: 'topic-del-2',
+            name: 'Bonds',
+            importance: 'medium',
+            keyPoints: ['Ionic'],
+          },
+        ],
+      };
+
+      await db.studyPlans.add(plan);
+      await db.studyDays.add({
+        id: 'day-del-1',
+        planId: plan.id,
+        dayNumber: 1,
+        date: new Date('2026-03-02'),
+        completed: false,
+        newTopicIds: ['topic-del-1'],
+        reviewTopicIds: [],
+        estimatedMinutes: 25,
+      });
+      await db.progressLogs.add({
+        id: 'log-del-1',
+        planId: plan.id,
+        dayId: 'day-del-1',
+        completedAt: new Date('2026-03-02'),
+        xpEarned: 20,
+        quizScore: 80,
+        flashcardsReviewed: 10,
+      });
+      await db.uploadedFiles.add({
+        id: 'file-del-1',
+        planId: plan.id,
+        fileName: 'chapter1.pdf',
+        fileType: 'application/pdf',
+        fileSize: 100,
+        uploadedAt: new Date('2026-03-01'),
+        extractedText: 'Notes',
+      });
+      await db.flashcards.add({
+        id: 'card-del-1',
+        topicId: 'topic-del-1',
+        front: 'Q',
+        back: 'A',
+        reviewDates: [],
+        masteryLevel: 0,
+      });
+      await db.quizQuestions.add({
+        id: 'quiz-del-1',
+        topicId: 'topic-del-2',
+        question: 'Question?',
+        options: ['A', 'B', 'C', 'D'],
+        correctAnswerIndex: 0,
+        explanation: 'Because',
+      });
+
+      await deleteStudyPlanAndContent(plan.id);
+
+      await expect(db.studyPlans.get(plan.id)).resolves.toBeUndefined();
+      await expect(db.studyDays.where('planId').equals(plan.id).count()).resolves.toBe(0);
+      await expect(db.progressLogs.where('planId').equals(plan.id).count()).resolves.toBe(0);
+      await expect(db.uploadedFiles.where('planId').equals(plan.id).count()).resolves.toBe(0);
+      await expect(
+        db.flashcards.where('topicId').anyOf(['topic-del-1', 'topic-del-2']).count()
+      ).resolves.toBe(0);
+      await expect(
+        db.quizQuestions.where('topicId').anyOf(['topic-del-1', 'topic-del-2']).count()
+      ).resolves.toBe(0);
+    });
+
+    it('throws when deleting a missing plan', async () => {
+      await expect(deleteStudyPlanAndContent('missing-plan')).rejects.toThrow(
+        'Study plan not found'
+      );
     });
   });
 });
