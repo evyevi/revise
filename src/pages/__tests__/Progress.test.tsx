@@ -303,7 +303,6 @@ describe('Progress page', () => {
         expect(screen.getByText('Algebra')).toBeInTheDocument();
         
         // Should show "Mastered" status within the topic mastery grid
-        const { getByText } = screen;
         const masteredLabels = screen.getAllByText('Mastered');
         expect(masteredLabels.length).toBeGreaterThan(0);
       });

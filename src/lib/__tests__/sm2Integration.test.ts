@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '../db';
 import { recordFlashcardReview } from '../reviewService';
-import { calculateSM2, Quality, DEFAULT_EF, deriveClampedMasteryLevel } from '../sm2Calculator';
+import { Quality, DEFAULT_EF, deriveClampedMasteryLevel } from '../sm2Calculator';
 import { getFlashcardsDueForReview } from '../planQueries';
 import type { Flashcard } from '../../types';
 
@@ -470,7 +470,6 @@ describe('SM-2 Integration Workflow', () => {
     // First review
     await recordFlashcardReview('card-persistent', Quality.Good);
     let updated = await db.flashcards.get('card-persistent');
-    const ef1 = updated!.easinessFactor;
     const rep1 = updated!.repetitions;
 
     // Modify nextReviewDate to make it due again

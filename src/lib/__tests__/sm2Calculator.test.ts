@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSM2, deriveClampedMasteryLevel, type SM2Result, type SM2Input, Quality } from '../sm2Calculator';
+import { calculateSM2, deriveClampedMasteryLevel, type SM2Input, Quality } from '../sm2Calculator';
 
 describe('sm2Calculator', () => {
   describe('calculateSM2', () => {
