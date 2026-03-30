@@ -18,11 +18,17 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 const PAGE_SEPARATOR = '\n\n'; // Double newline separates pages for readability
 
+const MIN_MEANINGFUL_TEXT_LENGTH = 50;
+
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     
+    if (pdf.numPages === 0) {
+      throw new Error('PDF has no pages');
+    }
+
     const textParts: string[] = [];
     
     // PDF.js uses 1-based page indexing
@@ -48,7 +54,16 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       }
     }
     
-    return textParts.join(PAGE_SEPARATOR);
+    const result = textParts.join(PAGE_SEPARATOR);
+
+    if (result.trim().length < MIN_MEANINGFUL_TEXT_LENGTH) {
+      throw new Error(
+        `PDF appears to be image-based or has very little extractable text (${result.trim().length} characters). ` +
+        'Try uploading a text-based PDF, or take a photo instead.'
+      );
+    }
+
+    return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to extract text from PDF: ${errorMessage}`);

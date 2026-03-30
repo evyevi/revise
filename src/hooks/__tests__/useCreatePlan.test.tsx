@@ -29,6 +29,9 @@ vi.mock('../../lib/db', () => ({
   },
 }));
 
+// Must be >= 50 chars to pass minimum content validation
+const SAMPLE_CONTENT = 'This is sample study material content for testing the plan generation flow in detail';
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.useFakeTimers();
@@ -71,7 +74,7 @@ describe('useCreatePlan', () => {
     expect(result.current.step).toBe(1);
 
     act(() => {
-      result.current.setExtractedText('Some content');
+      result.current.setExtractedText(SAMPLE_CONTENT);
       result.current.nextStep();
     });
 
@@ -82,7 +85,7 @@ describe('useCreatePlan', () => {
     const { result } = renderHook(() => useCreatePlan());
 
     act(() => {
-      result.current.setExtractedText('content');
+      result.current.setExtractedText(SAMPLE_CONTENT);
       result.current.setTestDate(new Date('2026-02-25T00:00:00Z'));
     });
 
@@ -99,7 +102,7 @@ describe('useCreatePlan', () => {
     });
 
     expect(generateStudyPlan).toHaveBeenCalledWith(
-      { content: 'content', daysAvailable: 2 },
+      { content: SAMPLE_CONTENT, daysAvailable: 2 },
       expect.any(Function)
     );
     expect(result.current.recommendedMinutesPerDay).toBe(30);
@@ -109,7 +112,7 @@ describe('useCreatePlan', () => {
     const { result } = renderHook(() => useCreatePlan());
 
     act(() => {
-      result.current.setExtractedText('content');
+      result.current.setExtractedText(SAMPLE_CONTENT);
       result.current.setTestDate(new Date('2026-02-25T00:00:00Z'));
       result.current.setMinutesPerDay(45);
     });
@@ -127,7 +130,7 @@ describe('useCreatePlan', () => {
     });
 
     expect(generateStudyPlan).toHaveBeenCalledWith(
-      { content: 'content', daysAvailable: 2, minutesPerDay: 45 },
+      { content: SAMPLE_CONTENT, daysAvailable: 2, minutesPerDay: 45 },
       expect.any(Function)
     );
   });
@@ -293,7 +296,7 @@ describe('useCreatePlan', () => {
     
     // Setup: set plan and text
     act(() => {
-      result.current.setExtractedText('Some content');
+      result.current.setExtractedText(SAMPLE_CONTENT);
       result.current.setTestDate(new Date('2026-03-01'));
     });
     
@@ -335,7 +338,7 @@ describe('useCreatePlan', () => {
     
     // Setup wizard state
     act(() => {
-      result.current.setExtractedText('Content');
+      result.current.setExtractedText(SAMPLE_CONTENT);
       result.current.setTestDate(new Date('2026-03-01'));
       result.current.setMinutesPerDay(45);
     });
@@ -378,7 +381,7 @@ describe('useCreatePlan', () => {
     
     // Setup wizard state
     act(() => {
-      result.current.setExtractedText('Content');
+      result.current.setExtractedText(SAMPLE_CONTENT);
       result.current.setTestDate(new Date('2026-03-01'));
     });
     
@@ -416,7 +419,7 @@ describe('useCreatePlan', () => {
     // --- Plan A ---
     const { result: hookA } = renderHook(() => useCreatePlan());
     act(() => {
-      hookA.current.setExtractedText('Biology content');
+      hookA.current.setExtractedText(SAMPLE_CONTENT);
       hookA.current.setTestDate(new Date('2026-03-10'));
     });
     vi.mocked(generateStudyPlan).mockResolvedValueOnce({
@@ -445,7 +448,7 @@ describe('useCreatePlan', () => {
     // --- Plan B with the SAME AI-generated topic ID "topic-1" ---
     const { result: hookB } = renderHook(() => useCreatePlan());
     act(() => {
-      hookB.current.setExtractedText('Chemistry content');
+      hookB.current.setExtractedText(SAMPLE_CONTENT);
       hookB.current.setTestDate(new Date('2026-03-10'));
     });
     vi.mocked(generateStudyPlan).mockResolvedValueOnce({

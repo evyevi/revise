@@ -35,11 +35,13 @@ export function DatePicker({
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-semibold text-gray-700">
+        <label htmlFor="date-picker" className="block text-sm font-semibold text-gray-700">
           {label}
         </label>
       )}
       <input
+        id="date-picker"
+        name="date-picker"
         type="date"
         value={formatDate(value)}
         onChange={handleChange}

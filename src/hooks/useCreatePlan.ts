@@ -263,8 +263,13 @@ export function useCreatePlan() {
 
   const generatePlan = useCallback(async (): Promise<void> => {
     if (state.isGenerating) return;
-    if (!state.extractedText || daysAvailable <= 0) {
-      dispatch({ type: 'SET_ERROR', payload: 'Missing required data to generate plan.' });
+    if (!state.extractedText || state.extractedText.trim().length < 50 || daysAvailable <= 0) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: !state.extractedText || state.extractedText.trim().length < 50
+          ? 'Not enough text could be extracted from your files. Try uploading a different format or take a photo instead.'
+          : 'Missing required data to generate plan.',
+      });
       return;
     }
 

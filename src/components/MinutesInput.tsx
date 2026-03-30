@@ -56,7 +56,7 @@ export function MinutesInput({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         {label && (
-          <label className="block text-sm font-semibold text-gray-700">
+          <label htmlFor="minutes-input" className="block text-sm font-semibold text-gray-700">
             {label}
           </label>
         )}
@@ -68,6 +68,8 @@ export function MinutesInput({
       </div>
       <div className="flex items-center space-x-2">
         <input
+          id="minutes-input"
+          name="minutes-input"
           type="number"
           value={value ?? ''}
           onChange={handleChange}
