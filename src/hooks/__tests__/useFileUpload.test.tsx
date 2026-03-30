@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFileUpload } from '../useFileUpload';
+import { useEffect, useRef } from 'react';
 import * as textExtraction from '../../lib/textExtraction';
 
 // Mock text extraction
@@ -222,5 +223,44 @@ describe('useFileUpload', () => {
       expect(result.current.files[0].status).toBe('error');
       expect(result.current.files[0].error).toContain('Unsupported file type');
     });
+  });
+
+  // Regression: getAllExtractedText must be referentially stable between renders
+  // when files haven't changed, to prevent infinite useEffect loops (e.g. in CreatePlan)
+  it('getAllExtractedText reference is stable across renders when files unchanged', () => {
+    const { result, rerender } = renderHook(() => useFileUpload());
+
+    const ref1 = result.current.getAllExtractedText;
+    rerender();
+    const ref2 = result.current.getAllExtractedText;
+
+    expect(ref1).toBe(ref2);
+  });
+
+  // Regression: a useEffect depending on getAllExtractedText must not loop infinitely
+  it('does not cause infinite re-renders when getAllExtractedText is a useEffect dependency', async () => {
+    const effectCount = vi.fn();
+
+    const { result } = renderHook(() => {
+      const { getAllExtractedText, ...rest } = useFileUpload();
+      const countRef = useRef(0);
+
+      useEffect(() => {
+        countRef.current++;
+        effectCount();
+        getAllExtractedText();
+      }, [getAllExtractedText]);
+
+      return { ...rest, getAllExtractedText, renderCount: countRef };
+    });
+
+    // Wait a tick for effects to settle
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    // Effect should fire once on mount, not loop
+    expect(effectCount.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(result.current.renderCount.current).toBeLessThanOrEqual(2);
   });
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { extractTextFromFile } from '../lib/textExtraction';
 
 export interface UploadedFileInfo {
@@ -155,12 +155,12 @@ export function useFileUpload(): UseFileUploadReturn {
    * Get all successfully extracted text joined with separator
    * Useful for creating study materials from multiple files
    */
-  const getAllExtractedText = (): string => {
+  const getAllExtractedText = useCallback((): string => {
     return files
       .filter(isCompletedWithText)
       .map((f) => f.extractedText)
       .join('\n\n---\n\n');
-  };
+  }, [files]);
 
   return {
     files,
