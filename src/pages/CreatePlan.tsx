@@ -275,7 +275,7 @@ export function CreatePlan() {
                 void savePlan(files.map((fileInfo) => fileInfo.file))
                   .then(() => {
                     // Brief delay for user acknowledgment
-                    setTimeout(() => navigate('/'), 500);
+                    setTimeout(() => void navigate('/'), 500);
                   })
                   .catch(() => {
                     // Error already in hook state, will display

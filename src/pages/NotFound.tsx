@@ -11,7 +11,7 @@ export function NotFound() {
       if (countdown > 1) {
         setCountdown(countdown - 1);
       } else {
-        navigate('/');
+        void navigate('/');
       }
     }, 1000);
 

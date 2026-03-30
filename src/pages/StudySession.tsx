@@ -18,7 +18,7 @@ export function StudySession() {
         <div className="p-6 text-center">
           <p className="text-red-600">Invalid study plan</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => void navigate('/')}
             className="mt-4 bg-primary-500 text-white py-2 px-4 rounded-lg"
           >
             Back to Home
@@ -42,7 +42,7 @@ export function StudySession() {
         <div className="p-6 text-center">
           <p className="text-red-600 mb-4">{session.error}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => void navigate('/')}
             className="bg-primary-500 text-white py-2 px-4 rounded-lg"
           >
             Back to Home
@@ -60,7 +60,7 @@ export function StudySession() {
             newTopics={session.newTopics}
             reviewTopics={session.reviewTopics}
             onNext={session.advanceStep}
-            onBack={() => navigate('/')}
+            onBack={() => void navigate('/')}
           />
         )}
 
@@ -100,7 +100,7 @@ export function StudySession() {
         {session.step === 'completion' && (
           <CompletionScreen
             xpEarned={session.xpEarned}
-            onContinue={() => navigate('/')}
+            onContinue={() => void navigate('/')}
           />
         )}
       </div>

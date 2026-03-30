@@ -31,7 +31,7 @@ export const BadgeUnlock = React.memo(function BadgeUnlock({
 
   // Memoize card transition (spring bounce)
   const cardTransition = useMemo(() => ({
-    type: prefersReducedMotion ? 'tween' : 'spring',
+    type: prefersReducedMotion ? 'tween' as const : 'spring' as const,
     duration: prefersReducedMotion ? 0.3 : undefined,
     bounce: prefersReducedMotion ? 0 : 0.5,
   }), [prefersReducedMotion]);

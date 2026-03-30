@@ -21,7 +21,7 @@ export function PlanCard({ plan, todayCompleted, daysCompleted, onDelete }: Plan
 
   const handleStart = () => {
     // Will navigate to today's study session
-    navigate(`/study/${plan.id}`);
+    void navigate(`/study/${plan.id}`);
   };
 
   const handleDelete = async () => {
