@@ -51,12 +51,7 @@ export async function getQuizzesByTopicIds(topicIds: string[]) {
 export async function deleteStudyPlanAndContent(planId: string): Promise<void> {
   await db.transaction(
     'rw',
-    db.studyPlans,
-    db.studyDays,
-    db.flashcards,
-    db.quizQuestions,
-    db.progressLogs,
-    db.uploadedFiles,
+    [db.studyPlans, db.studyDays, db.flashcards, db.quizQuestions, db.progressLogs, db.uploadedFiles],
     async () => {
       const plan = await db.studyPlans.get(planId);
       if (!plan) {
