@@ -323,7 +323,7 @@ export function useCreatePlan() {
         );
         const remappedPlan: PlanResponse = {
           ...state.plan,
-          topics: state.plan.topics.map((t) => ({ ...t, id: topicIdMap.get(t.id)! })),
+          topics: state.plan.topics.map((t) => ({ ...t, id: topicIdMap.get(t.id) ?? t.id })),
           schedule: state.plan.schedule.map((day) => ({
             ...day,
             newTopicIds: day.newTopicIds.map((id) => topicIdMap.get(id) ?? id),

@@ -426,19 +426,21 @@ describe('useCreatePlan', () => {
       quizQuestions: [],
       recommendedMinutesPerDay: 30,
     });
-    await act(async () => { await hookA.current.generatePlan(); });
+    await act(async () => {
+      await hookA.current.generatePlan();
+    });
 
     let flashcardsA: Flashcard[] = [];
     let studyDaysA: StudyDay[] = [];
     (db.flashcards.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((cards: Flashcard[]) => {
       flashcardsA = cards;
-      return Promise.resolve(undefined);
     });
     (db.studyDays.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((days: StudyDay[]) => {
       studyDaysA = days;
-      return Promise.resolve(undefined);
     });
-    await act(async () => { await hookA.current.savePlan([]); });
+    await act(async () => {
+      await hookA.current.savePlan([]);
+    });
 
     // --- Plan B with the SAME AI-generated topic ID "topic-1" ---
     const { result: hookB } = renderHook(() => useCreatePlan());
@@ -453,19 +455,20 @@ describe('useCreatePlan', () => {
       quizQuestions: [],
       recommendedMinutesPerDay: 30,
     });
-    await act(async () => { await hookB.current.generatePlan(); });
+    await act(async () => {
+      await hookB.current.generatePlan();
+    });
 
     let flashcardsB: Flashcard[] = [];
-    let studyDaysB: StudyDay[] = [];
     (db.flashcards.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((cards: Flashcard[]) => {
       flashcardsB = cards;
-      return Promise.resolve(undefined);
     });
-    (db.studyDays.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation((days: StudyDay[]) => {
-      studyDaysB = days;
-      return Promise.resolve(undefined);
+    (db.studyDays.bulkAdd as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      // no-op
     });
-    await act(async () => { await hookB.current.savePlan([]); });
+    await act(async () => {
+      await hookB.current.savePlan([]);
+    });
 
     // Raw AI ID must never appear in saved data
     expect(flashcardsA.map(c => c.topicId)).not.toContain('topic-1');

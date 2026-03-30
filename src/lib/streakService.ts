@@ -27,11 +27,15 @@ function normalizeDate(date: Date | undefined): Date | undefined {
 }
 
 /**
- * Calculate the number of days between two dates
+ * Calculate the number of calendar days between two dates.
+ * Uses UTC to avoid DST transition errors where local midnight-to-midnight
+ * spans != 24 hours.
  */
 function daysBetween(date1: Date, date2: Date): number {
+  const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
+  const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
   const msPerDay = 1000 * 60 * 60 * 24;
-  return Math.floor((date2.getTime() - date1.getTime()) / msPerDay);
+  return Math.floor((utc2 - utc1) / msPerDay);
 }
 
 /**
