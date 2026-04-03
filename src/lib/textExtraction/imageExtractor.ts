@@ -11,14 +11,14 @@ interface TesseractLogger {
  * Extract text from image using OCR with file size validation
  * @param file - Image file (JPG, PNG)
  * @param onProgress - Optional callback for progress updates (0-100)
- * @param language - Tesseract language codes (default: 'eng+swe+fra' for English + Swedish + French)
+ * @param language - Tesseract language code (default: 'eng')
  * @returns Extracted text from image
  * @throws Error if file is too large or OCR fails
  */
 export async function extractTextFromImage(
   file: File,
   onProgress?: (progress: number) => void,
-  language: string = 'eng+swe+fra'
+  language: string = 'eng'
 ): Promise<string> {
   // Validate file size
   if (file.size > MAX_IMAGE_SIZE) {

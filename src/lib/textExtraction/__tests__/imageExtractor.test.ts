@@ -18,14 +18,14 @@ describe('Image text extraction', () => {
     mockRecognize.mockResolvedValue({ data: { text: 'extracted text' } });
   });
 
-  it('passes eng+swe+fra as default language to Tesseract', async () => {
+  it('passes eng as default language to Tesseract', async () => {
     const file = new File(['fake-image-data'], 'photo.jpg', { type: 'image/jpeg' });
 
     await extractTextFromImage(file);
 
     expect(mockRecognize).toHaveBeenCalledWith(
       file,
-      'eng+swe+fra',
+      'eng',
       expect.objectContaining({ logger: expect.any(Function) })
     );
   });
