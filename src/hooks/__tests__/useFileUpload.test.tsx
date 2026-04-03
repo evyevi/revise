@@ -263,4 +263,23 @@ describe('useFileUpload', () => {
     expect(effectCount.mock.calls.length).toBeLessThanOrEqual(2);
     expect(result.current.renderCount.current).toBeLessThanOrEqual(2);
   });
+
+  it('passes the language param to extractTextFromFile', async () => {
+    vi.mocked(textExtraction.extractTextFromFile).mockResolvedValue('texte extrait');
+
+    const { result } = renderHook(() => useFileUpload('fra'));
+    const mockFile = new File(['fake-image-data'], 'photo.jpg', { type: 'image/jpeg' });
+
+    await act(async () => {
+      await result.current.addFiles([mockFile]);
+    });
+
+    await waitFor(() => {
+      expect(textExtraction.extractTextFromFile).toHaveBeenCalledWith(
+        mockFile,
+        expect.any(Function),
+        'fra'
+      );
+    });
+  });
 });

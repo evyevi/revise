@@ -26,7 +26,7 @@ function generateFileId(): string {
   return crypto.randomUUID();
 }
 
-export function useFileUpload(): UseFileUploadReturn {
+export function useFileUpload(language: string = 'eng'): UseFileUploadReturn {
   const [files, setFiles] = useState<UploadedFileInfo[]>([]);
 
   // File validation constants
@@ -107,7 +107,7 @@ export function useFileUpload(): UseFileUploadReturn {
     try {
       const text = await extractTextFromFile(file, (progress) => {
         updateFileProgress(id, progress);
-      });
+      }, language);
       
       updateFileStatus(id, 'completed', { extractedText: text });
     } catch (error) {
