@@ -70,6 +70,12 @@ describe('CreatePlan wizard', () => {
     expect(screen.getByText(/upload.*study materials/i)).toBeInTheDocument();
   });
 
+  it('renders a language selector in step 1', () => {
+    renderWithRouter(<CreatePlan />);
+
+    expect(screen.getByRole('combobox', { name: /image text language/i })).toBeInTheDocument();
+  });
+
   it('does not show Back button on step 1', () => {
     renderWithRouter(<CreatePlan />);
     expect(screen.queryByText(/back/i)).not.toBeInTheDocument();

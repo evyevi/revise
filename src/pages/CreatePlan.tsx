@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
@@ -9,9 +9,51 @@ import { MinutesInput } from '../components/MinutesInput';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { useCreatePlan } from '../hooks/useCreatePlan';
 
+const OCR_LANGUAGES = [
+  { label: 'Svenska', code: 'swe' },
+  { label: 'Français', code: 'fra' },
+  { label: 'Afrikaans', code: 'afr' },
+  { label: 'Arabic', code: 'ara' },
+  { label: 'Bulgarian', code: 'bul' },
+  { label: 'Chinese (Simplified)', code: 'chi_sim' },
+  { label: 'Chinese (Traditional)', code: 'chi_tra' },
+  { label: 'Croatian', code: 'hrv' },
+  { label: 'Czech', code: 'ces' },
+  { label: 'Danish', code: 'dan' },
+  { label: 'Dutch', code: 'nld' },
+  { label: 'English', code: 'eng' },
+  { label: 'Estonian', code: 'est' },
+  { label: 'Finnish', code: 'fin' },
+  { label: 'German', code: 'deu' },
+  { label: 'Greek', code: 'ell' },
+  { label: 'Hebrew', code: 'heb' },
+  { label: 'Hindi', code: 'hin' },
+  { label: 'Hungarian', code: 'hun' },
+  { label: 'Indonesian', code: 'ind' },
+  { label: 'Italian', code: 'ita' },
+  { label: 'Japanese', code: 'jpn' },
+  { label: 'Korean', code: 'kor' },
+  { label: 'Latvian', code: 'lav' },
+  { label: 'Lithuanian', code: 'lit' },
+  { label: 'Norwegian', code: 'nor' },
+  { label: 'Polish', code: 'pol' },
+  { label: 'Portuguese', code: 'por' },
+  { label: 'Romanian', code: 'ron' },
+  { label: 'Russian', code: 'rus' },
+  { label: 'Serbian', code: 'srp' },
+  { label: 'Slovak', code: 'slk' },
+  { label: 'Slovenian', code: 'slv' },
+  { label: 'Spanish', code: 'spa' },
+  { label: 'Thai', code: 'tha' },
+  { label: 'Turkish', code: 'tur' },
+  { label: 'Ukrainian', code: 'ukr' },
+  { label: 'Vietnamese', code: 'vie' },
+] as const;
+
 export function CreatePlan() {
   const navigate = useNavigate();
-  const { files, addFiles, removeFile, getAllExtractedText } = useFileUpload();
+  const [ocrLanguage, setOcrLanguage] = useState('eng');
+  const { files, addFiles, removeFile, getAllExtractedText } = useFileUpload(ocrLanguage);
   const {
     step,
     testDate,
@@ -69,6 +111,29 @@ export function CreatePlan() {
           <>
             <p className="text-gray-600 mb-6">Upload your study materials to get started</p>
             
+            {/* OCR Language selector — only affects image files */}
+            <div className="mb-4">
+              <label
+                htmlFor="ocr-language"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Image text language
+              </label>
+              <select
+                id="ocr-language"
+                aria-label="Image text language"
+                value={ocrLanguage}
+                onChange={(e) => setOcrLanguage(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+              >
+                {OCR_LANGUAGES.map(({ label, code }) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Only used when extracting text from photos</p>
+            </div>
             <FileUpload onFilesSelected={handleFilesSelected} />
             
             {files.length > 0 && (
