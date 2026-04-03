@@ -5,7 +5,7 @@ import { extractTextFromImage } from './imageExtractor';
  * Extract text from various file types
  * @param file - File to extract text from (PDF, TXT, JPG, PNG)
  * @param onProgress - Optional callback for OCR progress (0-100)
- * @param language - Tesseract language codes for image OCR (default: 'eng+swe')
+ * @param language - Tesseract language codes for image OCR (default: 'eng')
  * @returns Extracted text content
  * @throws Error if file type is unsupported or extraction fails
  */
