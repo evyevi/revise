@@ -44,6 +44,30 @@ interface PlanResponse {
   recommendedMinutesPerDay: number;
 }
 
+/**
+ * Enforce schedule constraints on the AI-generated plan:
+ * - Remove any days beyond daysAvailable (test day and after)
+ * - Make the last study day a full review with no new topics
+ */
+export function enforceScheduleConstraints(plan: PlanResponse, daysAvailable: number): PlanResponse {
+  const filtered = plan.schedule.filter(day => day.dayNumber <= daysAvailable);
+
+  const maxDayNumber = filtered.reduce((max, day) => Math.max(max, day.dayNumber), -Infinity);
+
+  if (maxDayNumber === -Infinity) {
+    return { ...plan, schedule: [] };
+  }
+
+  const allTopicIds = plan.topics.map(t => t.id);
+  const schedule = filtered.map(day =>
+    day.dayNumber === maxDayNumber
+      ? { ...day, newTopicIds: [], reviewTopicIds: allTopicIds }
+      : { ...day }
+  );
+
+  return { ...plan, schedule };
+}
+
 const isPlanResponse = (value: unknown): value is PlanResponse => {
   if (!value || typeof value !== 'object') {
     return false;
@@ -246,19 +270,8 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
       throw new Error(`recommendedMinutesPerDay out of range: must be ${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY}`);
     }
 
-    // Enforce: no schedule entries beyond daysAvailable (the last day before the test)
-    planData.schedule = planData.schedule.filter(day => day.dayNumber <= daysAvailable);
-
-    // Enforce: the last study day must be a full review with no new topics
-    const lastDay = planData.schedule.reduce<typeof planData.schedule[0] | null>(
-      (max, day) => (max === null || day.dayNumber > max.dayNumber ? day : max),
-      null
-    );
-    if (lastDay !== null) {
-      const allTopicIds = planData.topics.map(t => t.id);
-      lastDay.newTopicIds = [];
-      lastDay.reviewTopicIds = allTopicIds;
-    }
+    // Enforce: no schedule entries beyond daysAvailable; last day is a full review
+    planData = enforceScheduleConstraints(planData, daysAvailable);
 
     // TODO: SECURITY REVIEW - Consider sanitizing AI-generated text content
     // (flashcard front/back, quiz questions/options) to prevent content injection
