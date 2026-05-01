@@ -1,6 +1,27 @@
 import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom';
 
+// Node 22+ exposes a built-in localStorage global (node:internal/webstorage) that
+// requires --localstorage-file and does not implement clear()/key(). Override it with
+// a simple in-memory implementation so tests can use localStorage normally.
+const createLocalStorageMock = () => {
+  const store: Record<string, string> = {};
+  return {
+    getItem: (key: string): string | null => store[key] ?? null,
+    setItem: (key: string, value: string): void => { store[key] = String(value); },
+    removeItem: (key: string): void => { delete store[key]; },
+    clear: (): void => { Object.keys(store).forEach(k => { delete store[k]; }); },
+    key: (index: number): string | null => Object.keys(store)[index] ?? null,
+    get length(): number { return Object.keys(store).length; },
+  };
+};
+
+Object.defineProperty(globalThis, 'localStorage', {
+  value: createLocalStorageMock(),
+  writable: true,
+  configurable: true,
+});
+
 // Mock matchMedia for tests
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
