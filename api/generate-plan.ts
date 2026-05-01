@@ -149,7 +149,7 @@ export default async function handler(
     
     const prompt = `You are an expert educational content analyst. Analyze the following study material and create a comprehensive study plan.
 
-Days available: ${daysAvailable}
+Days available to study: ${daysAvailable} (Day 1 is today. Day ${daysAvailable} is the last day before the test. The test itself is on day ${daysAvailable + 1} — do NOT schedule any lessons on or after day ${daysAvailable + 1}.)
 Minutes per day (user suggested): ${minutesPerDay || 30}
 
 Material:
@@ -200,6 +200,8 @@ Requirements:
 - Include 2-3 quiz questions per topic
 - Importance: high (most critical), medium (important), low (supplementary)
 - Estimated minutes should fit within daily limit
+- The schedule must only contain days 1 through ${daysAvailable} — never beyond day ${daysAvailable}
+- Day ${daysAvailable} is the final study day (the day before the test): it must have NO new topics (newTopicIds must be empty) and must review ALL topic IDs in reviewTopicIds as a comprehensive final revision
 - recommendedMinutesPerDay: AI-suggested optimal daily study time (${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY} range), computed from content complexity and ${daysAvailable} days available. Independent of user input.
 
 IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
@@ -242,6 +244,20 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
     // Validate recommendedMinutesPerDay is within bounds
     if (planData.recommendedMinutesPerDay < MIN_MINUTES_PER_DAY || planData.recommendedMinutesPerDay > MAX_MINUTES_PER_DAY) {
       throw new Error(`recommendedMinutesPerDay out of range: must be ${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY}`);
+    }
+
+    // Enforce: no schedule entries beyond daysAvailable (the last day before the test)
+    planData.schedule = planData.schedule.filter(day => day.dayNumber <= daysAvailable);
+
+    // Enforce: the last study day must be a full review with no new topics
+    const lastDay = planData.schedule.reduce<typeof planData.schedule[0] | null>(
+      (max, day) => (max === null || day.dayNumber > max.dayNumber ? day : max),
+      null
+    );
+    if (lastDay !== null) {
+      const allTopicIds = planData.topics.map(t => t.id);
+      lastDay.newTopicIds = [];
+      lastDay.reviewTopicIds = allTopicIds;
     }
 
     // TODO: SECURITY REVIEW - Consider sanitizing AI-generated text content
