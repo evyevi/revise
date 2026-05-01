@@ -4,6 +4,7 @@ import { Layout } from '../components/Layout';
 import { StudyDashboard } from '../components/StudyDashboard';
 import { PlanCard } from '../components/PlanCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { NotificationSettings } from '../components/NotificationSettings';
 import { db, getUserStats } from '../lib/db';
 import { deleteStudyPlanAndContent } from '../lib/planQueries';
 import type { StudyPlan } from '../types';
@@ -215,6 +216,13 @@ export function Home() {
         >
           + Add New Plan
         </Link>
+
+        <section className="mt-6">
+          <h2 className="text-base font-semibold text-gray-700 mb-3">Daily Reminders</h2>
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <NotificationSettings />
+          </div>
+        </section>
       </div>
     </Layout>
   );
