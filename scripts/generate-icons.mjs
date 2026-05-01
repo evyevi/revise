@@ -1,4 +1,7 @@
-// scripts/generate-icons.mjs
+// One-off icon generator. The generated PNGs are committed to git.
+// To regenerate: npm install canvas && node scripts/generate-icons.mjs
+// canvas is intentionally NOT in package.json (native addon, run locally only).
+//
 // Generates placeholder pink square PNGs for PWA icons.
 // Replace outputs with real artwork before production.
 import { createCanvas } from 'canvas';
