@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { migrateFlashcardsToSM2 } from './lib/migrateFlashcardsToSM2'
+import { registerSW } from 'virtual:pwa-register'
+
+registerSW({ immediate: true })
 
 const rootElement = document.getElementById('root');
 
