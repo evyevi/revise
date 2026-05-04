@@ -19,7 +19,7 @@ export async function extractTextFromFile(
 
   // PDF files
   if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
-    return extractTextFromPDF(file);
+    return extractTextFromPDF(file, language);
   }
 
   // Plain text files
