@@ -1,9 +1,10 @@
 import { createGeminiProvider, type LLMProvider } from './gemini';
 import { createOpenAICompatibleProvider } from './openai-compatible';
+import { createAnthropicProvider } from './anthropic';
 
 export type { LLMProvider };
 
-const SUPPORTED = ['gemini', 'openai', 'groq'] as const;
+const SUPPORTED = ['gemini', 'openai', 'groq', 'anthropic'] as const;
 
 export function getProvider(): LLMProvider {
   const name = process.env.LLM_PROVIDER ?? 'gemini';
@@ -30,6 +31,14 @@ export function getProvider(): LLMProvider {
         apiKey,
         baseUrl: 'https://api.groq.com/openai/v1',
         model: process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile',
+      });
+    }
+    case 'anthropic': {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) throw new Error('ANTHROPIC_API_KEY environment variable is required');
+      return createAnthropicProvider({
+        apiKey,
+        model: process.env.ANTHROPIC_MODEL ?? 'claude-3-5-haiku-20241022',
       });
     }
     default:

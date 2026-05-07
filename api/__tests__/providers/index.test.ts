@@ -8,6 +8,10 @@ vi.mock('../../providers/gemini', () => ({
   createGeminiProvider: vi.fn().mockReturnValue(async () => 'gemini response'),
 }));
 
+vi.mock('../../providers/anthropic', () => ({
+  createAnthropicProvider: vi.fn().mockReturnValue(async () => 'anthropic response'),
+}));
+
 describe('getProvider', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -15,6 +19,7 @@ describe('getProvider', () => {
     delete process.env.GEMINI_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.GROQ_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
   });
 
   it('returns a function when LLM_PROVIDER=gemini and key is set', async () => {
@@ -68,5 +73,11 @@ describe('getProvider', () => {
     const { createGeminiProvider } = await import('../../providers/gemini');
     getProvider();
     expect(vi.mocked(createGeminiProvider)).toHaveBeenCalledWith('test-key');
+  });
+
+  it('throws when anthropic is selected but ANTHROPIC_API_KEY is missing', async () => {
+    process.env.LLM_PROVIDER = 'anthropic';
+    const { getProvider } = await import('../../providers/index');
+    expect(() => getProvider()).toThrow('ANTHROPIC_API_KEY');
   });
 });
