@@ -63,6 +63,35 @@ For AI features (study plan generation) to work, you need the Gemini API key:
 GEMINI_API_KEY=your_api_key_here
 ```
 
+### LLM Provider Options
+
+| Provider | Set in `.env.local` | Where to get a key |
+|----------|--------------------|--------------------|
+| **Gemini** (default) | `LLM_PROVIDER=gemini` + `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) |
+| **OpenAI** | `LLM_PROVIDER=openai` + `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com) |
+| **Groq** (fast, free tier) | `LLM_PROVIDER=groq` + `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) |
+| **Anthropic** | `LLM_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
+| **Ollama** (local, no key) | `VITE_LLM_PROVIDER=ollama` | [ollama.com](https://ollama.com) |
+
+#### Using Ollama (fully offline, no API key)
+
+1. Install Ollama: `brew install ollama` or [download](https://ollama.com/download)
+2. Start it and pull a model:
+   ```bash
+   ollama serve
+   ollama pull llama3.2
+   ```
+3. Add to `.env.local`:
+   ```
+   VITE_LLM_PROVIDER=ollama
+   VITE_OLLAMA_MODEL=llama3.2
+   ```
+4. Run the dev server as normal: `npm run dev`
+
+Ollama is called directly by the browser — no data leaves your machine and the Vercel function is not used.
+
+> **Model quality note:** Local models (llama3.2, mistral, etc.) produce valid JSON less reliably than cloud APIs. If plan generation fails, try a larger model (`ollama pull llama3.1:70b`) or switch to a cloud provider.
+
 **Note**: This is used by the backend API function (`api/generate-plan.ts`), not the frontend code.
 
 ## Testing
