@@ -2,6 +2,8 @@ import { createGeminiProvider, type LLMProvider } from './gemini';
 
 export type { LLMProvider };
 
+const SUPPORTED = ['gemini'] as const;
+
 export function getProvider(): LLMProvider {
   const name = process.env.LLM_PROVIDER ?? 'gemini';
 
@@ -12,6 +14,6 @@ export function getProvider(): LLMProvider {
       return createGeminiProvider(apiKey);
     }
     default:
-      throw new Error(`Unknown LLM_PROVIDER: "${name}". Supported: gemini`);
+      throw new Error(`Unknown LLM_PROVIDER: "${name}". Supported: ${SUPPORTED.join(', ')}`);
   }
 }

@@ -35,4 +35,13 @@ describe('getProvider', () => {
     const { getProvider } = await import('../../providers/index');
     expect(() => getProvider()).toThrow('Unknown LLM_PROVIDER');
   });
+
+  it('passes GEMINI_API_KEY to createGeminiProvider', async () => {
+    process.env.LLM_PROVIDER = 'gemini';
+    process.env.GEMINI_API_KEY = 'test-key';
+    const { getProvider } = await import('../../providers/index');
+    const { createGeminiProvider } = await import('../../providers/gemini');
+    getProvider();
+    expect(vi.mocked(createGeminiProvider)).toHaveBeenCalledWith('test-key');
+  });
 });
