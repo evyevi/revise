@@ -33,8 +33,15 @@ describe('createAnthropicProvider', () => {
           'anthropic-version': '2023-06-01',
           'Content-Type': 'application/json',
         }),
+        body: expect.stringContaining('"My prompt"'),
       })
     );
+    // Also verify key body fields
+    const callArgs = mockFetch.mock.calls[0][1] as { body: string };
+    const body = JSON.parse(callArgs.body) as { model: string; max_tokens: number; messages: Array<{role: string; content: string}> };
+    expect(body.model).toBe('claude-3-5-haiku-20241022');
+    expect(body.max_tokens).toBe(8192);
+    expect(body.messages).toEqual([{ role: 'user', content: 'My prompt' }]);
     expect(result).toBe('{"answer":42}');
   });
 

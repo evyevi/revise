@@ -80,4 +80,23 @@ describe('getProvider', () => {
     const { getProvider } = await import('../../providers/index');
     expect(() => getProvider()).toThrow('ANTHROPIC_API_KEY');
   });
+
+  it('returns a function when LLM_PROVIDER=anthropic and key is set', async () => {
+    process.env.LLM_PROVIDER = 'anthropic';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    const { getProvider } = await import('../../providers/index');
+    expect(typeof getProvider()).toBe('function');
+  });
+
+  it('passes ANTHROPIC_API_KEY and model to createAnthropicProvider', async () => {
+    process.env.LLM_PROVIDER = 'anthropic';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    const { getProvider } = await import('../../providers/index');
+    const { createAnthropicProvider } = await import('../../providers/anthropic');
+    getProvider();
+    expect(vi.mocked(createAnthropicProvider)).toHaveBeenCalledWith({
+      apiKey: 'sk-ant-test',
+      model: 'claude-3-5-haiku-20241022',
+    });
+  });
 });
