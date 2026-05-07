@@ -1,8 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getProvider } from './providers/index';
 
 // Constants
-const MODEL_NAME = 'gemini-2.5-flash';
 const MAX_CONTENT_LENGTH = 15000;
 const DAYS_MIN = 1;
 const DAYS_MAX = 365;
@@ -131,17 +130,6 @@ export default async function handler(
   // TODO: SECURITY REVIEW - Implement rate limiting to prevent API abuse
   // Consider using Vercel Edge Middleware or @upstash/ratelimit
 
-  // Validate API key
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error('Missing GEMINI_API_KEY environment variable');
-    res.status(500).json({
-      error: 'Server configuration error',
-      details: 'API key not configured',
-    });
-    return;
-  }
-
   try {
     const { content, daysAvailable, minutesPerDay } = req.body as GeneratePlanRequest;
 
@@ -168,9 +156,8 @@ export default async function handler(
       return;
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
+    const provider = getProvider();
+
     const prompt = `You are an expert educational content analyst. Analyze the following study material and create a comprehensive study plan.
 
 Days available to study: ${daysAvailable} (Day 1 is today. Day ${daysAvailable} is the last day before the test. The test itself is on day ${daysAvailable + 1} — do NOT schedule any lessons on or after day ${daysAvailable + 1}.)
@@ -230,9 +217,7 @@ Requirements:
 
 IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    const text = await provider(prompt);
 
     // Parse JSON - improved error handling
     let planData: PlanResponse;
