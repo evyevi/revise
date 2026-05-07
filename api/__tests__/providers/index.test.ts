@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('../../providers/openai-compatible', () => ({
+  createOpenAICompatibleProvider: vi.fn().mockReturnValue(async () => 'openai response'),
+}));
+
 vi.mock('../../providers/gemini', () => ({
   createGeminiProvider: vi.fn().mockReturnValue(async () => 'gemini response'),
 }));
@@ -9,6 +13,8 @@ describe('getProvider', () => {
     vi.resetModules();
     delete process.env.LLM_PROVIDER;
     delete process.env.GEMINI_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.GROQ_API_KEY;
   });
 
   it('returns a function when LLM_PROVIDER=gemini and key is set', async () => {
@@ -34,6 +40,25 @@ describe('getProvider', () => {
     process.env.LLM_PROVIDER = 'mystery-llm';
     const { getProvider } = await import('../../providers/index');
     expect(() => getProvider()).toThrow('Unknown LLM_PROVIDER');
+  });
+
+  it('returns a function when LLM_PROVIDER=openai and key is set', async () => {
+    process.env.LLM_PROVIDER = 'openai';
+    process.env.OPENAI_API_KEY = 'sk-test';
+    const { getProvider } = await import('../../providers/index');
+    expect(typeof getProvider()).toBe('function');
+  });
+
+  it('throws when openai is selected but OPENAI_API_KEY is missing', async () => {
+    process.env.LLM_PROVIDER = 'openai';
+    const { getProvider } = await import('../../providers/index');
+    expect(() => getProvider()).toThrow('OPENAI_API_KEY');
+  });
+
+  it('throws when groq is selected but GROQ_API_KEY is missing', async () => {
+    process.env.LLM_PROVIDER = 'groq';
+    const { getProvider } = await import('../../providers/index');
+    expect(() => getProvider()).toThrow('GROQ_API_KEY');
   });
 
   it('passes GEMINI_API_KEY to createGeminiProvider', async () => {
