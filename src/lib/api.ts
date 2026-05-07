@@ -1,3 +1,6 @@
+import { callOllama } from './ollamaApi';
+import { buildStudyPlanPrompt } from './studyPlanPrompt';
+
 export interface GeneratePlanRequest {
   content: string;
   daysAvailable: number;
@@ -37,6 +40,24 @@ const API_TIMEOUT = 120000; // 2 minutes for AI processing
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000; // ms
 
+const parsePlanResponse = (text: string): PlanResponse => {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  const toParse = jsonMatch ? jsonMatch[0] : text;
+  const parsed = JSON.parse(toParse) as unknown;
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    !Array.isArray((parsed as Record<string, unknown>).topics) ||
+    !Array.isArray((parsed as Record<string, unknown>).schedule) ||
+    !Array.isArray((parsed as Record<string, unknown>).flashcards) ||
+    !Array.isArray((parsed as Record<string, unknown>).quizQuestions) ||
+    typeof (parsed as Record<string, unknown>).recommendedMinutesPerDay !== 'number'
+  ) {
+    throw new Error('AI response did not contain required fields');
+  }
+  return parsed as PlanResponse;
+};
+
 /**
  * Call serverless function to generate study plan from extracted text
  * Includes timeout protection and basic retry logic for transient errors
@@ -49,6 +70,17 @@ export async function generateStudyPlan(
   request: GeneratePlanRequest,
   onRetry?: (attempt: number) => void
 ): Promise<PlanResponse> {
+  const llmProvider = import.meta.env.VITE_LLM_PROVIDER as string | undefined;
+  if (llmProvider === 'ollama') {
+    const baseUrl =
+      (import.meta.env.VITE_OLLAMA_BASE_URL as string | undefined) ?? 'http://localhost:11434';
+    const model =
+      (import.meta.env.VITE_OLLAMA_MODEL as string | undefined) ?? 'llama3.2';
+    const prompt = buildStudyPlanPrompt(request);
+    const text = await callOllama({ baseUrl, model, prompt });
+    return parsePlanResponse(text);
+  }
+
   const endpoint =
     (import.meta.env.VITE_API_ENDPOINT as string | undefined) ?? '/api/generate-plan';
 
