@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getProvider } from './_providers/index';
-import { buildStudyPlanPrompt } from '../src/lib/studyPlanPrompt';
-import { MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY } from '../src/lib/studyPlanConstants';
+import { getProvider } from './_providers/index.js';
+import { buildStudyPlanPrompt } from '../src/lib/studyPlanPrompt.js';
+import { MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY } from '../src/lib/studyPlanConstants.js';
 
 // Constants
 const DAYS_MIN = 1;

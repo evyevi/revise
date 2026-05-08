@@ -1,4 +1,4 @@
-import type { LLMProvider } from './gemini';
+import type { LLMProvider } from './gemini.js';
 
 interface OpenAIConfig {
   apiKey: string;

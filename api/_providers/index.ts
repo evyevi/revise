@@ -1,6 +1,6 @@
-import { createGeminiProvider, type LLMProvider } from './gemini';
-import { createOpenAICompatibleProvider } from './openai-compatible';
-import { createAnthropicProvider } from './anthropic';
+import { createGeminiProvider, type LLMProvider } from './gemini.js';
+import { createOpenAICompatibleProvider } from './openai-compatible.js';
+import { createAnthropicProvider } from './anthropic.js';
 
 export type { LLMProvider };
 
