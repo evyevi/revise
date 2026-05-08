@@ -1,15 +1,14 @@
 import type { GeneratePlanRequest } from './api';
+import { MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY } from './studyPlanConstants';
 
 const MAX_CONTENT_LENGTH = 15000;
-const MIN_MINUTES_PER_DAY = 5;
-const MAX_MINUTES_PER_DAY = 480;
 
 export function buildStudyPlanPrompt(request: GeneratePlanRequest): string {
   const { content, daysAvailable, minutesPerDay } = request;
   return `You are an expert educational content analyst. Analyze the following study material and create a comprehensive study plan.
 
 Days available to study: ${daysAvailable} (Day 1 is today. Day ${daysAvailable} is the last day before the test. The test itself is on day ${daysAvailable + 1} — do NOT schedule any lessons on or after day ${daysAvailable + 1}.)
-Minutes per day (user suggested): ${minutesPerDay || 30}
+Minutes per day (user suggested): ${minutesPerDay ?? 30}
 
 Material:
 ${content.substring(0, MAX_CONTENT_LENGTH)}
