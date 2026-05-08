@@ -1,12 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getProvider } from './providers/index';
 import { buildStudyPlanPrompt } from '../src/lib/studyPlanPrompt';
+import { MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY } from '../src/lib/studyPlanConstants';
 
 // Constants
 const DAYS_MIN = 1;
 const DAYS_MAX = 365;
-const MIN_MINUTES_PER_DAY = 5;
-const MAX_MINUTES_PER_DAY = 480; // 8 hours
 
 interface GeneratePlanRequest {
   content: string;

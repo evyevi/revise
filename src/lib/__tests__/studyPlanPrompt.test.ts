@@ -4,7 +4,7 @@ import { buildStudyPlanPrompt } from '../studyPlanPrompt';
 describe('buildStudyPlanPrompt', () => {
   it('includes daysAvailable and content in the prompt', () => {
     const prompt = buildStudyPlanPrompt({ content: 'Study material', daysAvailable: 7 });
-    expect(prompt).toContain('7');
+    expect(prompt).toContain('Days available to study: 7');
     expect(prompt).toContain('Study material');
   });
 
@@ -18,7 +18,7 @@ describe('buildStudyPlanPrompt', () => {
 
   it('defaults minutesPerDay to 30 when not provided', () => {
     const prompt = buildStudyPlanPrompt({ content: 'material', daysAvailable: 5 });
-    expect(prompt).toContain('30');
+    expect(prompt).toContain('Minutes per day (user suggested): 30');
   });
 
   it('uses provided minutesPerDay', () => {
