@@ -20,7 +20,7 @@ describe('createAnthropicProvider', () => {
       }),
     });
 
-    const { createAnthropicProvider } = await import('../../providers/anthropic');
+    const { createAnthropicProvider } = await import('../../_providers/anthropic');
     const provider = createAnthropicProvider({ apiKey: 'sk-ant-test', model: 'claude-3-5-haiku-20241022' });
     const result = await provider('My prompt');
 
@@ -52,7 +52,7 @@ describe('createAnthropicProvider', () => {
       text: async () => 'Unauthorized',
     });
 
-    const { createAnthropicProvider } = await import('../../providers/anthropic');
+    const { createAnthropicProvider } = await import('../../_providers/anthropic');
     const provider = createAnthropicProvider({ apiKey: 'bad', model: 'claude-3-5-haiku-20241022' });
 
     await expect(provider('prompt')).rejects.toThrow('Anthropic API error 401');
@@ -64,7 +64,7 @@ describe('createAnthropicProvider', () => {
       json: async () => ({ content: [] }),
     });
 
-    const { createAnthropicProvider } = await import('../../providers/anthropic');
+    const { createAnthropicProvider } = await import('../../_providers/anthropic');
     const provider = createAnthropicProvider({ apiKey: 'sk-ant-test', model: 'claude-3-5-haiku-20241022' });
 
     await expect(provider('prompt')).rejects.toThrow('No text content in Anthropic response');

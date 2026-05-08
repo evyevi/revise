@@ -20,7 +20,7 @@ describe('createOpenAICompatibleProvider', () => {
       }),
     });
 
-    const { createOpenAICompatibleProvider } = await import('../../providers/openai-compatible');
+    const { createOpenAICompatibleProvider } = await import('../../_providers/openai-compatible');
     const provider = createOpenAICompatibleProvider({
       apiKey: 'sk-test',
       baseUrl: 'https://api.openai.com/v1',
@@ -50,7 +50,7 @@ describe('createOpenAICompatibleProvider', () => {
       text: async () => 'Rate limited',
     });
 
-    const { createOpenAICompatibleProvider } = await import('../../providers/openai-compatible');
+    const { createOpenAICompatibleProvider } = await import('../../_providers/openai-compatible');
     const provider = createOpenAICompatibleProvider({
       apiKey: 'sk-test',
       baseUrl: 'https://api.openai.com/v1',
@@ -66,7 +66,7 @@ describe('createOpenAICompatibleProvider', () => {
       json: async () => ({ choices: [] }),
     });
 
-    const { createOpenAICompatibleProvider } = await import('../../providers/openai-compatible');
+    const { createOpenAICompatibleProvider } = await import('../../_providers/openai-compatible');
     const provider = createOpenAICompatibleProvider({
       apiKey: 'sk-test',
       baseUrl: 'https://api.openai.com/v1',

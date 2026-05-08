@@ -15,7 +15,7 @@ describe('createGeminiProvider', () => {
       return { getGenerativeModel: vi.fn().mockReturnValue({ generateContent: mockGenerateContent }) };
     } as unknown as typeof GoogleGenerativeAI);
 
-    const { createGeminiProvider } = await import('../../providers/gemini');
+    const { createGeminiProvider } = await import('../../_providers/gemini');
     const provider = createGeminiProvider('fake-api-key');
     const result = await provider('Hello prompt');
 
@@ -30,7 +30,7 @@ describe('createGeminiProvider', () => {
       return { getGenerativeModel: vi.fn().mockReturnValue({ generateContent: mockGenerateContent }) };
     } as unknown as typeof GoogleGenerativeAI);
 
-    const { createGeminiProvider } = await import('../../providers/gemini');
+    const { createGeminiProvider } = await import('../../_providers/gemini');
     const provider = createGeminiProvider('fake-api-key');
 
     await expect(provider('prompt')).rejects.toThrow('Gemini returned empty response');
