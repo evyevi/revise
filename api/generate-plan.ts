@@ -168,14 +168,35 @@ export default async function handler(
       // Try direct parse first
       planData = parsePlanResponse(text);
     } catch {
-      // Fallback: extract JSON from potential markdown blocks
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
+      // Fallback: extract JSON object using balanced brace matching
+      const start = text.indexOf('{');
+      if (start === -1) {
+        throw new Error('AI response did not contain valid JSON');
+      }
+
+      let extracted: string | null = null;
+      let depth = 0;
+      let inString = false;
+      let escape = false;
+      for (let i = start; i < text.length; i++) {
+        const ch = text[i];
+        if (escape) { escape = false; continue; }
+        if (ch === '\\' && inString) { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') depth++;
+        if (ch === '}') {
+          depth--;
+          if (depth === 0) { extracted = text.slice(start, i + 1); break; }
+        }
+      }
+
+      if (!extracted) {
         throw new Error('AI response did not contain valid JSON');
       }
 
       try {
-        planData = parsePlanResponse(jsonMatch[0]);
+        planData = parsePlanResponse(extracted);
       } catch (parseError) {
         throw new Error(`Invalid JSON structure: ${parseError instanceof Error ? parseError.message : 'parse error'}`);
       }

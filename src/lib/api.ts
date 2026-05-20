@@ -40,9 +40,32 @@ const API_TIMEOUT = 120000; // 2 minutes for AI processing
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000; // ms
 
+const extractJsonObject = (text: string): string => {
+  const start = text.indexOf('{');
+  if (start === -1) return text;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+
+  return text;
+};
+
 const parsePlanResponse = (text: string): PlanResponse => {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  const toParse = jsonMatch ? jsonMatch[0] : text;
+  const toParse = extractJsonObject(text);
   const parsed = JSON.parse(toParse) as unknown;
   if (
     !parsed ||
