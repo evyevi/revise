@@ -19,6 +19,7 @@ export async function callOllama({ baseUrl, model, prompt }: OllamaOptions): Pro
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
       }),
     });
   } catch {

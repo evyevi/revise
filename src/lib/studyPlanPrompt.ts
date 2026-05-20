@@ -61,6 +61,7 @@ Requirements:
 - The schedule must only contain days 1 through ${daysAvailable} — never beyond day ${daysAvailable}
 - Day ${daysAvailable} is the final study day (the day before the test): it must have NO new topics (newTopicIds must be empty) and must review ALL topic IDs in reviewTopicIds as a comprehensive final revision
 - recommendedMinutesPerDay: AI-suggested optimal daily study time (${MIN_MINUTES_PER_DAY}-${MAX_MINUTES_PER_DAY} range), computed from content complexity and ${daysAvailable} days available. Independent of user input.
+- All topic names, key points, flashcard content, and quiz questions must be in the SAME LANGUAGE as the source material. If the material is in French, respond in French. If in Spanish, respond in Spanish. Only JSON keys stay in English.
 
 IMPORTANT: Respond ONLY with valid JSON, no markdown, no explanations.`;
 }
