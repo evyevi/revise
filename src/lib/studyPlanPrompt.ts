@@ -1,5 +1,5 @@
-import type { GeneratePlanRequest } from './api';
-import { MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY } from './studyPlanConstants';
+import type { GeneratePlanRequest } from './api.js';
+import { MIN_MINUTES_PER_DAY, MAX_MINUTES_PER_DAY } from './studyPlanConstants.js';
 
 const MAX_CONTENT_LENGTH = 15000;
 
