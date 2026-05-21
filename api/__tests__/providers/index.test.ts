@@ -66,13 +66,17 @@ describe('getProvider', () => {
     expect(() => getProvider()).toThrow('GROQ_API_KEY');
   });
 
-  it('passes GEMINI_API_KEY to createGeminiProvider', async () => {
+  it('passes options to createGeminiProvider', async () => {
     process.env.LLM_PROVIDER = 'gemini';
     process.env.GEMINI_API_KEY = 'test-key';
     const { getProvider } = await import('../../_providers/index');
     const { createGeminiProvider } = await import('../../_providers/gemini');
     getProvider();
-    expect(vi.mocked(createGeminiProvider)).toHaveBeenCalledWith('test-key');
+    expect(vi.mocked(createGeminiProvider)).toHaveBeenCalledWith({
+      apiKey: 'test-key',
+      model: undefined,
+      thinkingBudget: undefined,
+    });
   });
 
   it('throws when anthropic is selected but ANTHROPIC_API_KEY is missing', async () => {

@@ -13,7 +13,12 @@ export function getProvider(): LLMProvider {
     case 'gemini': {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) throw new Error('GEMINI_API_KEY environment variable is required');
-      return createGeminiProvider(apiKey);
+      const thinkingBudget = process.env.GEMINI_THINKING_BUDGET;
+      return createGeminiProvider({
+        apiKey,
+        model: process.env.GEMINI_MODEL ?? undefined,
+        thinkingBudget: thinkingBudget !== undefined ? Number(thinkingBudget) : undefined,
+      });
     }
     case 'openai': {
       const apiKey = process.env.OPENAI_API_KEY;
