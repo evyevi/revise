@@ -263,7 +263,7 @@ vercel dev
 3. Or use `npm run dev` instead (dev server only, no API functions locally)
 
 **Configuration**: Vercel settings are defined in `vercel.json`:
-- API functions in `api/` directory have a 30-second timeout
+- API functions in `api/` directory have a 60-second timeout
 - Static assets are automatically served
 
 ### API Functions
